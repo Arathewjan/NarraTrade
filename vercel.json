@@ -1,16 +1,14 @@
 {
   "version": 2,
-  "builds": [
-    { "src": "api/*.js", "use": "@vercel/node" },
-    { "src": "index.html", "use": "@vercel/static" }
-  ],
-  "routes": [
-    { "src": "/api/(.*)", "dest": "/api/$1" },
-    { "src": "/(.*)", "dest": "/index.html" }
-  ],
   "functions": {
     "api/briefs.js":  { "maxDuration": 30 },
     "api/news.js":    { "maxDuration": 30 },
     "api/analyze.js": { "maxDuration": 30 }
-  }
+  },
+  "routes": [
+    { "src": "/api/(.*)", "dest": "/api/$1" },
+    { "src": "/onboarding", "dest": "/onboarding.html" },
+    { "src": "/journal", "dest": "/journal.html" },
+    { "src": "/(.*)", "dest": "/index.html" }
+  ]
 }
