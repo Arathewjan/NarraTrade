@@ -262,6 +262,24 @@ header { position:sticky; top:0; z-index:200; background:rgba(8,10,13,0.97); bac
 .pw-name { font-family:'Syne',sans-serif; font-size:11px; font-weight:700; }
 .pw-sub  { font-family:'JetBrains Mono',monospace; font-size:7px; letter-spacing:1px; color:var(--muted); margin-top:1px; }
 .pw-status { font-family:'JetBrains Mono',monospace; font-size:7px; letter-spacing:1px; padding:2px 7px; border-radius:20px; border:1px solid; }
+.gauge-arc-wrap { display:flex; flex-direction:column; align-items:center; margin-bottom:6px; }
+.gauge-arc { width:130px; height:70px; position:relative; overflow:hidden; }
+.gauge-arc svg { width:100%; height:140px; }
+.gauge-value { font-family:'Cormorant Garamond',serif; font-size:36px; font-weight:700; color:var(--text); text-align:center; line-height:1; margin-top:-4px; }
+.gauge-rating { font-family:'Syne',sans-serif; font-size:10px; font-weight:800; text-align:center; margin-top:4px; }
+.gauge-labels { display:flex; justify-content:space-between; font-family:'JetBrains Mono',monospace; font-size:7px; color:var(--muted); margin-top:6px; width:100%; }
+.sector-row { display:flex; align-items:center; gap:8px; padding:7px 0; border-bottom:1px solid var(--border); }
+.sector-row:last-child { border-bottom:none; }
+.sector-name { color:var(--text2); flex:1; font-size:10px; }
+.sector-bar-wrap { width:48px; height:4px; background:var(--border2); border-radius:2px; overflow:hidden; }
+.sector-bar-fill { height:100%; border-radius:2px; }
+.sector-pct { font-family:'JetBrains Mono',monospace; font-size:10px; font-weight:600; width:48px; text-align:right; }
+.traded-item { display:flex; align-items:center; gap:8px; padding:7px 0; border-bottom:1px solid var(--border); }
+.traded-item:last-child { border-bottom:none; }
+.traded-rank { font-family:'JetBrains Mono',monospace; font-size:9px; color:var(--dim); width:14px; }
+.traded-ticker { font-family:'Syne',sans-serif; font-size:13px; font-weight:700; color:var(--text); flex:1; }
+.traded-name { font-size:9px; color:var(--muted); flex:2; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.traded-dir { font-family:'JetBrains Mono',monospace; font-size:8px; letter-spacing:1px; padding:3px 7px; border-radius:6px; flex-shrink:0; font-weight:600; }
 .pulse-row { display:flex; align-items:center; justify-content:space-between; padding:8px 0; border-bottom:1px solid var(--border); }
 .pulse-row:last-child { border-bottom:none; }
 .pulse-name { font-size:11px; color:var(--text2); }
@@ -273,11 +291,7 @@ header { position:sticky; top:0; z-index:200; background:rgba(8,10,13,0.97); bac
 .big-spin { width:24px; height:24px; border:1px solid var(--border2); border-top-color:var(--gold); border-radius:50%; animation:spin 1s linear infinite; }
 .feed-loading p { font-family:'JetBrains Mono',monospace; font-size:10px; letter-spacing:1px; }
 .feed-loading small { font-size:9px; color:var(--dim); }
-::-webkit-scrollbar { width:3px; } .feed-loading { display:flex; flex-direction:column; align-items:center; justify-content:center; padding:80px 0; color:var(--muted); gap:16px; }
-.big-spin { width:24px; height:24px; border:1px solid var(--border2); border-top-color:var(--gold); border-radius:50%; animation:spin 1s linear infinite; }
-.feed-loading p { font-family:'JetBrains Mono',monospace; font-size:10px; letter-spacing:1px; }
-.feed-loading small { font-size:9px; color:var(--dim); }
-::-webkit-scrollbar-thumb { background:var(--border2); border-radius:2px; }
+::-webkit-scrollbar { width:3px; } ::-webkit-scrollbar-thumb { background:var(--border2); border-radius:2px; }
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -302,8 +316,8 @@ header { position:sticky; top:0; z-index:200; background:rgba(8,10,13,0.97); bac
       <span id="pillLabel">LOADING...</span>
     </div>
     <div class="header-clock" id="clock"></div>
-    <a class="nav-journal" href="journal.html" style="font-family:JetBrains Mono,monospace;font-size:9px;letter-spacing:1.5px;color:var(--muted);text-decoration:none;padding:5px 12px;border-radius:20px;border:1px solid var(--border2);transition:all 0.15s;">📓 JOURNAL</a>
-    <span id="userLabel" style="font-family:JetBrains Mono,monospace;font-size:9px;letter-spacing:1px;color:var(--muted)"></span>
+    <a href="journal.html" style="font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:1.5px;color:var(--muted);text-decoration:none;padding:5px 12px;border-radius:20px;border:1px solid var(--border2);transition:all 0.15s;">📓 JOURNAL</a>
+    <span id="userLabel" style="font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:1px;color:var(--muted)"></span>
   </div>
 </header>
 
@@ -343,7 +357,7 @@ header { position:sticky; top:0; z-index:200; background:rgba(8,10,13,0.97); bac
     <div id="personaNoticeWrap"></div>
     <div class="feed-header">
       <div class="feed-label">NarraTrade Live Feed</div>
-      <div class="story-count">3 stories</div>
+      <span class="last-fetch" id="lastFetch"></span><span class="story-count" id="storyCount"></span>
     </div>
 
     <div class="persona-notice options">
@@ -630,6 +644,7 @@ header { position:sticky; top:0; z-index:200; background:rgba(8,10,13,0.97); bac
   </div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 const SUPABASE_URL = 'https://bjbvtwqckknngaamuaam.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_f_j6gPsZNgBqVFWAt6wKRg_pgJkQx7P';
@@ -646,24 +661,24 @@ const PERSONA_META = {
   macro: { name:'Macro Trader', icon:'🌐', cls:'macro' },
 };
 
-let allStories = [], activeFilter = 'all', activePersonas = [];
-let refreshTimer, countdownSecs = 300, currentUser = null;
+let allStories=[], activeFilter='all', activePersonas=[];
+let refreshTimer, countdownSecs=300, currentUser=null;
 
 // AUTH GUARD
-(async () => {
-  const { data: { session } } = await sb.auth.getSession();
-  if (!session?.user) { window.location.href = 'onboarding.html'; return; }
+(async()=>{
+  const {data:{session}} = await sb.auth.getSession();
+  if (!session?.user) { window.location.href='onboarding.html'; return; }
   currentUser = session.user;
   const name = currentUser.user_metadata?.full_name || currentUser.email.split('@')[0];
   document.getElementById('userLabel').textContent = name.toUpperCase();
-  const { data: profile } = await sb.from('profiles').select('personas').eq('id', currentUser.id).single();
+  const {data:profile} = await sb.from('profiles').select('personas').eq('id',currentUser.id).single();
   if (profile?.personas?.length) {
     activePersonas = profile.personas;
-    localStorage.setItem('catalystiq-personas', JSON.stringify(activePersonas));
+    localStorage.setItem('narratrade-personas', JSON.stringify(activePersonas));
   } else {
-    const saved = localStorage.getItem('catalystiq-personas');
+    const saved = localStorage.getItem('narratrade-personas');
     activePersonas = saved ? JSON.parse(saved) : [];
-    if (!activePersonas.length) { window.location.href = 'onboarding.html'; return; }
+    if (!activePersonas.length) { window.location.href='onboarding.html'; return; }
   }
   renderPersonaBar();
   renderPersonaNotice();
@@ -672,48 +687,49 @@ let refreshTimer, countdownSecs = 300, currentUser = null;
 })();
 
 // CLOCK
-setInterval(() => {
+setInterval(()=>{
   document.getElementById('clock').textContent =
     new Date().toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'}) +
     '  ' + new Date().toLocaleTimeString('en-US',{hour12:false});
-}, 1000);
+},1000);
 
 function renderPersonaBar() {
   document.getElementById('personaPills').innerHTML = activePersonas.map(p => {
     const m = PERSONA_META[p];
-    return `<div class="active-persona-pill ${m.cls}" style="margin-right:8px"><div class="persona-pill-dot"></div>${m.icon} ${m.name}</div>`;
+    if (!m) return '';
+    return `<div class="active-persona-pill ${m.cls}"><div class="persona-pill-dot"></div>${m.icon} ${m.name}</div>`;
   }).join('');
 }
 
 function renderPersonaNotice() {
-  if (!activePersonas.length) { document.getElementById('personaNoticeWrap').innerHTML=''; return; }
-  const names = activePersonas.map(p=>`<strong>${PERSONA_META[p].name}</strong>`).join(' & ');
+  const wrap = document.getElementById('personaNoticeWrap');
+  if (!wrap || !activePersonas.length) return;
+  const names = activePersonas.map(p=>PERSONA_META[p]?`<strong>${PERSONA_META[p].name}</strong>`:'').join(' & ');
   const cls = activePersonas[0];
-  document.getElementById('personaNoticeWrap').innerHTML = `
-    <div class="persona-notice ${cls}">
-      <span>${PERSONA_META[cls].icon}</span>
-      <span>Showing stories matched to your ${names} persona${activePersonas.length>1?'s':''}. Stories outside your profile are hidden.</span>
-    </div>`;
+  wrap.innerHTML = `<div class="persona-notice ${cls}">
+    <span>${PERSONA_META[cls]?.icon||''}</span>
+    <span>Showing stories matched to your ${names} persona${activePersonas.length>1?'s':''}. Stories outside your profile are hidden.</span>
+  </div>`;
 }
 
 function storyMatchesPersonas(s) {
   if (!activePersonas.length) return true;
   return activePersonas.some(p => {
-    const cats = PERSONA_CATEGORIES[p] || [];
-    return cats.includes(s.category) || cats.includes(s._cat);
+    const cats = PERSONA_CATEGORIES[p]||[];
+    return cats.includes(s.category)||cats.includes(s._cat);
   });
 }
 
 function matchedPersonasForStory(s) {
   return activePersonas.filter(p => {
-    const cats = PERSONA_CATEGORIES[p] || [];
-    return cats.includes(s.category) || cats.includes(s._cat);
+    const cats = PERSONA_CATEGORIES[p]||[];
+    return cats.includes(s.category)||cats.includes(s._cat);
   });
 }
 
 function setFilter(f, btn) {
   activeFilter = f;
-  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));
   btn.classList.add('active');
   renderFeed();
 }
@@ -723,25 +739,22 @@ async function loadFeed() {
   document.getElementById('feedContainer').innerHTML = `<div class="feed-loading"><div class="big-spin"></div><p>PULLING NARRATRADE LIVE WIRE...</p><small>Reuters · Dow Jones · MarketWatch</small></div>`;
   try {
     const newsRes = await fetch('/api/news');
-    if (!newsRes.ok) throw new Error('News HTTP ' + newsRes.status);
+    if (!newsRes.ok) throw new Error('News HTTP '+newsRes.status);
     const raw = await newsRes.json();
     if (!raw.length) throw new Error('No stories returned');
 
     document.getElementById('feedContainer').innerHTML = `<div class="feed-loading"><div class="big-spin"></div><p>GENERATING TRADE BRIEFS FOR ${raw.length} STORIES...</p><small>Claude is analyzing each headline</small></div>`;
 
-    const briefsRes = await fetch('/api/briefs', {
-      method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({ newsItems: raw }),
-    });
+    const briefsRes = await fetch('/api/briefs',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({newsItems:raw})});
     if (!briefsRes.ok) { const e=await briefsRes.json().catch(()=>({})); throw new Error(e.error||'Briefs HTTP '+briefsRes.status); }
     const briefs = await briefsRes.json();
 
-    allStories = raw.map((item, idx) => {
+    allStories = raw.map((item,idx)=>{
       const ai = briefs.find(b=>b.i===idx)||briefs[idx]||{};
-      return { id:item.id||idx, headline:item.headline, summary:item.summary||'', source:item.source||'Finnhub',
-               url:item.url||'', datetime:item.datetime, _cat:item._cat,
-               impact:ai.impact||'mixed', category:ai.category||item._cat||'general',
-               oneLiner:ai.oneLiner||'', plays:ai.plays||[] };
+      return {id:item.id||idx,headline:item.headline,summary:item.summary||'',source:item.source||'Finnhub',
+              url:item.url||'',datetime:item.datetime,_cat:item._cat,
+              impact:ai.impact||'mixed',category:ai.category||item._cat||'general',
+              oneLiner:ai.oneLiner||'',plays:ai.plays||[]};
     });
 
     const now = new Date();
@@ -767,22 +780,22 @@ async function loadFeed() {
 
 function renderFeed() {
   const impactF = ['bearish','bullish','mixed'];
-  let stories = activeFilter==='all' ? allStories : allStories.filter(s =>
-    impactF.includes(activeFilter) ? s.impact===activeFilter : s.category===activeFilter||s._cat===activeFilter);
-  const visible = stories.filter(s => storyMatchesPersonas(s));
-  const hidden  = stories.filter(s => !storyMatchesPersonas(s));
+  let stories = activeFilter==='all' ? allStories : allStories.filter(s=>
+    impactF.includes(activeFilter)?s.impact===activeFilter:s.category===activeFilter||s._cat===activeFilter);
+  const visible = stories.filter(s=>storyMatchesPersonas(s));
+  const hidden  = stories.filter(s=>!storyMatchesPersonas(s));
   document.getElementById('storyCount').textContent = visible.length+' stories';
-  if (!visible.length && !hidden.length) {
-    document.getElementById('feedContainer').innerHTML = `<div class="feed-loading"><p>NO STORIES IN THIS FILTER</p></div>`; return;
+  if (!visible.length&&!hidden.length) {
+    document.getElementById('feedContainer').innerHTML=`<div class="feed-loading"><p>NO STORIES IN THIS FILTER</p></div>`; return;
   }
-  let html = visible.map((s,i) => renderCard(s,i)).join('');
+  let html = visible.map((s,i)=>renderCard(s,i)).join('');
   if (hidden.length) {
     html += `<div style="font-family:'JetBrains Mono',monospace;font-size:8px;letter-spacing:2px;color:var(--muted);margin:20px 0 12px;display:flex;align-items:center;gap:10px">
       <span style="flex:1;height:1px;background:var(--border)"></span>
       ${hidden.length} STORIES HIDDEN BY PERSONA FILTER
       <span style="flex:1;height:1px;background:var(--border)"></span>
     </div>`;
-    html += hidden.map(s => `<div style="border:1.5px dashed var(--border2);border-radius:12px;padding:14px 18px;margin-bottom:12px;display:flex;align-items:center;gap:12px;opacity:0.4">
+    html += hidden.map(s=>`<div style="border:1.5px dashed var(--border2);border-radius:12px;padding:14px 18px;margin-bottom:12px;display:flex;align-items:center;gap:12px;opacity:0.4">
       <div style="font-size:18px">🔒</div>
       <div style="flex:1"><div style="height:10px;background:var(--border2);border-radius:4px;margin-bottom:7px;width:65%"></div><div style="height:7px;background:var(--dim);border-radius:4px;width:85%"></div></div>
       <div style="font-family:'JetBrains Mono',monospace;font-size:8px;letter-spacing:1px;color:var(--muted);padding:3px 9px;border:1px solid var(--border2);border-radius:20px">${esc(s.category?.toUpperCase()||'GENERAL')}</div>
@@ -791,27 +804,27 @@ function renderFeed() {
   document.getElementById('feedContainer').innerHTML = html;
 }
 
-function renderCard(s, i) {
-  const ageMin = s.datetime ? Math.round((Date.now()/1000-s.datetime)/60) : null;
+function renderCard(s,i) {
+  const ageMin = s.datetime?Math.round((Date.now()/1000-s.datetime)/60):null;
   const age = ageMin==null?'':ageMin<60?ageMin+'m ago':ageMin<1440?Math.floor(ageMin/60)+'h ago':Math.floor(ageMin/1440)+'d ago';
   const impact = s.impact||'mixed';
   const iCls = {bearish:'impact-bearish',bullish:'impact-bullish',mixed:'impact-mixed'}[impact]||'impact-mixed';
   const iDot = {bearish:'bear',bullish:'bull',mixed:'neut'}[impact]||'neut';
   const iLbl = {bearish:'▼ BEARISH',bullish:'▲ BULLISH',mixed:'◆ MIXED'}[impact]||'◆ MIXED';
   const matched = matchedPersonasForStory(s);
-  const personaBadges = matched.map(p => {
-    const m = PERSONA_META[p];
+  const personaBadges = matched.map(p=>{
+    const m=PERSONA_META[p]; if(!m) return '';
     return `<div class="pmb pmb-${p}"><div class="pmb-dot"></div>${m.icon} ${m.name.toUpperCase()}</div>`;
   }).join('');
 
-  const plays = (s.plays||[]).map(p => {
+  const plays = (s.plays||[]).map(p=>{
     const pc = p.direction==='LONG'?'long-play':p.direction==='SHORT'?'short-play':'commodity-play';
     const dc = p.direction==='LONG'?'dir-long':p.direction==='SHORT'?'dir-short':'dir-commodity';
     const dots = [1,2,3].map(n=>`<div class="conviction-dot ${n<=p.conviction?'filled':''}"></div>`).join('');
     const playId = `${s.id}-${p.ticker}`.replace(/[^a-zA-Z0-9]/g,'');
     const isCall = p.direction==='LONG'||p.direction==='COMMODITY';
-    const optType = isCall ? `<span class="ol-call">CALL</span>` : `<span class="ol-put">PUT</span>`;
-    const expDate = new Date(Date.now() + 18*24*60*60*1000);
+    const optType = isCall?`<span class="ol-call">CALL</span>`:`<span class="ol-put">PUT</span>`;
+    const expDate = new Date(Date.now()+18*24*60*60*1000);
     const expStr = `${expDate.getMonth()+1}/${String(expDate.getDate()).padStart(2,'0')}/${expDate.getFullYear()}`;
     return `<div class="trade-play ${pc}">
       <div class="play-dir ${dc}">${p.direction}</div>
@@ -824,14 +837,14 @@ function renderCard(s, i) {
     <div class="options-line" onclick="toggleLog('${playId}')">
       <span>📋</span>
       <span class="ol-ticker">${esc(p.ticker)}</span>
-      <span class="ol-expiry">${expStr}</span>
+      <span class="ol-expiry"> ${expStr}</span>
       ${optType}
       <span class="ol-sep">·</span>
-      <span class="ol-lbl">ENTRY</span><span class="ol-entry">AI EST.</span>
+      <span class="ol-lbl">ENTRY</span><span class="ol-entry"> AI EST.</span>
       <span class="ol-sep">·</span>
-      <span class="ol-lbl">TP</span><span class="ol-tp">—</span>
+      <span class="ol-lbl">TP</span><span class="ol-tp"> —</span>
       <span class="ol-sep">·</span>
-      <span class="ol-lbl">SL</span><span class="ol-sl">—</span>
+      <span class="ol-lbl">SL</span><span class="ol-sl"> —</span>
       <span class="ol-ai">✦ TAP TO LOG</span>
     </div>
     <div class="log-drawer" id="log-${playId}">
@@ -887,15 +900,15 @@ function renderCard(s, i) {
 
 function toggleLog(id) { document.getElementById(`log-${id}`)?.classList.toggle('open'); }
 
-function saveTradeLog(playId, ticker, expiry, type) {
-  const get = f => document.getElementById(`li-${playId}-${f}`)?.value || '';
-  const entry = { ticker, expiry, type, strike:get('strike'), entry:get('entry'), qty:get('qty'), tp:get('tp'), sl:get('sl'), note:get('note'), logged_at:new Date().toISOString() };
+function saveTradeLog(playId,ticker,expiry,type) {
+  const get = f=>document.getElementById(`li-${playId}-${f}`)?.value||'';
+  const entry = {ticker,expiry,type,strike:get('strike'),entry:get('entry'),qty:get('qty'),tp:get('tp'),sl:get('sl'),note:get('note'),logged_at:new Date().toISOString()};
   const trades = JSON.parse(localStorage.getItem('catalystiq-trades')||'[]');
   trades.unshift(entry);
-  localStorage.setItem('catalystiq-trades', JSON.stringify(trades));
-  ['strike','entry','qty','tp','sl','note'].forEach(f => { const el=document.getElementById(`li-${playId}-${f}`); if(el?.value) el.classList.add('saved'); });
-  const saved = document.getElementById(`ls-${playId}`);
-  if (saved) { saved.style.display='block'; setTimeout(()=>saved.style.display='none',2500); }
+  localStorage.setItem('catalystiq-trades',JSON.stringify(trades));
+  ['strike','entry','qty','tp','sl','note'].forEach(f=>{const el=document.getElementById(`li-${playId}-${f}`);if(el?.value)el.classList.add('saved');});
+  const saved=document.getElementById(`ls-${playId}`);
+  if(saved){saved.style.display='block';setTimeout(()=>saved.style.display='none',2500);}
 }
 
 async function deepAnalyze(id) {
