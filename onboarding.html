@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CatalystIQ — Get Started</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400&family=Syne:wght@400;500;600;700;800&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+*, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+:root {
+  --bg:#080a0d; --surface:#0d1017; --card:#0f1318;
+  --border:#1a2333; --border2:#243040;
+  --text:#e8edf5; --text2:#7a8fa8; --muted:#4a5568; --dim:#1e2836;
+  --gold:#c8a96e; --gold-dim:rgba(200,169,110,0.08);
+  --bull:#0d9e52; --bull-text:#34d07a;
+  --bear:#dc1f3b; --bear-text:#f05252;
+  --day-c:#f5a623;   --day-bg:rgba(245,166,35,0.08);   --day-b:rgba(245,166,35,0.28);
+  --swing-c:#4a9eff; --swing-bg:rgba(74,158,255,0.08);  --swing-b:rgba(74,158,255,0.28);
+  --macro-c:#c8a96e; --macro-bg:rgba(200,169,110,0.08); --macro-b:rgba(200,169,110,0.28);
+}
+html { scroll-behavior:smooth; }
+body { background:var(--bg); color:var(--text); font-family:'Syne',sans-serif; min-height:100vh; -webkit-font-smoothing:antialiased; overflow-x:hidden; }
+body::before { content:''; position:fixed; inset:0; background-image:linear-gradient(rgba(200,169,110,0.025) 1px,transparent 1px),linear-gradient(90deg,rgba(200,169,110,0.025) 1px,transparent 1px); background-size:64px 64px; pointer-events:none; z-index:0; }
+body::after { content:''; position:fixed; inset:0; background:radial-gradient(ellipse 80% 50% at 50% -5%,rgba(200,169,110,0.06) 0%,transparent 65%); pointer-events:none; z-index:0; }
+.onboarding { position:relative; z-index:1; min-height:100vh; display:flex; flex-direction:column; }
+.onboard-nav { display:flex; align-items:center; justify-content:space-between; padding:22px 48px; border-bottom:1px solid var(--border); }
+.nav-logo { display:flex; align-items:center; gap:11px; }
+.logo-mark { width:34px; height:34px; background:linear-gradient(140deg,#c8961e,#b07d2a); border-radius:9px; display:flex; align-items:center; justify-content:center; font-family:'Cormorant Garamond',serif; font-size:19px; font-weight:700; color:#fff; box-shadow:0 2px 12px rgba(176,125,42,0.35); }
+.nav-brand { font-family:'Syne',sans-serif; font-size:17px; font-weight:800; color:var(--text); letter-spacing:-0.4px; }
+.nav-brand em { color:var(--gold); font-style:normal; }
+.nav-steps { display:flex; align-items:center; gap:6px; }
+.step-pip { width:28px; height:4px; border-radius:2px; background:var(--border2); transition:background 0.3s; }
+.step-pip.active { background:var(--gold); }
+.step-pip.complete { background:var(--bull); }
+.onboard-body { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:48px 24px; }
+.step { display:none; flex-direction:column; align-items:center; width:100%; max-width:860px; animation:fadeUp 0.4s ease both; }
+.step.active { display:flex; }
+@keyframes fadeUp { from{opacity:0;transform:translateY(18px)} to{opacity:1;transform:translateY(0)} }
+.step-eyebrow { font-family:'JetBrains Mono',monospace; font-size:9px; letter-spacing:3px; color:var(--gold); text-transform:uppercase; margin-bottom:16px; display:flex; align-items:center; gap:10px; }
+.step-eyebrow::before,.step-eyebrow::after { content:''; flex:1; max-width:36px; height:1px; background:var(--gold-dim); }
+.step-title { font-family:'Cormorant Garamond',serif; font-size:52px; font-weight:700; line-height:1.08; text-align:center; letter-spacing:-1.5px; margin-bottom:12px; }
+.step-title span { color:var(--gold); font-style:italic; }
+.step-sub { font-size:14px; color:var(--text2); text-align:center; line-height:1.7; margin-bottom:40px; max-width:400px; }
+.auth-box { width:100%; max-width:400px; background:var(--card); border:1px solid var(--border2); border-radius:16px; padding:34px 30px; box-shadow:0 8px 48px rgba(0,0,0,0.45); }
+.auth-tabs { display:flex; margin-bottom:26px; border-bottom:1px solid var(--border); }
+.auth-tab { flex:1; padding:10px; text-align:center; font-family:'JetBrains Mono',monospace; font-size:9px; letter-spacing:2px; text-transform:uppercase; color:var(--muted); cursor:pointer; border:none; background:none; border-bottom:2px solid transparent; margin-bottom:-1px; transition:all 0.2s; }
+.auth-tab.active { color:var(--gold); border-bottom-color:var(--gold); }
+.form-group { margin-bottom:16px; }
+.form-label { font-family:'JetBrains Mono',monospace; font-size:8px; letter-spacing:2px; color:var(--muted); text-transform:uppercase; display:block; margin-bottom:7px; }
+.form-input { width:100%; padding:11px 14px; background:var(--surface); border:1px solid var(--border2); border-radius:9px; color:var(--text); font-family:'Syne',sans-serif; font-size:14px; outline:none; transition:all 0.2s; }
+.form-input::placeholder { color:var(--muted); }
+.form-input:focus { border-color:var(--gold); box-shadow:0 0 0 3px var(--gold-dim); }
+.form-btn { width:100%; padding:13px; background:linear-gradient(135deg,#c8961e,#b07d2a); border:none; border-radius:10px; color:#fff; font-family:'Syne',sans-serif; font-size:14px; font-weight:700; cursor:pointer; transition:all 0.2s; box-shadow:0 4px 20px rgba(176,125,42,0.3); margin-top:6px; }
+.form-btn:hover:not(:disabled) { transform:translateY(-1px); box-shadow:0 6px 28px rgba(176,125,42,0.45); }
+.form-btn:disabled { opacity:0.5; cursor:not-allowed; }
+.auth-msg { font-family:'JetBrains Mono',monospace; font-size:9px; letter-spacing:1px; border-radius:8px; padding:10px 12px; margin-top:12px; display:none; }
+.auth-error  { color:var(--bear-text); background:rgba(220,31,59,0.08);  border:1px solid rgba(220,31,59,0.2); }
+.auth-success { color:var(--bull-text); background:rgba(13,158,82,0.08); border:1px solid rgba(13,158,82,0.2); }
+.options-note { display:flex; align-items:flex-start; gap:12px; padding:14px 18px; border-radius:10px; background:rgba(176,106,255,0.06); border:1px solid rgba(176,106,255,0.2); margin-bottom:28px; width:100%; }
+.options-note-icon { font-size:18px; flex-shrink:0; margin-top:1px; }
+.options-note-text { font-size:12px; color:var(--text2); line-height:1.65; }
+.options-note-text strong { color:#b06aff; }
+.persona-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:18px; width:100%; margin-bottom:36px; }
+.persona-card { background:var(--card); border:1.5px solid var(--border2); border-radius:16px; padding:26px 22px; cursor:pointer; transition:all 0.25s ease; position:relative; overflow:hidden; animation:fadeUp 0.4s ease both; }
+.persona-card::before { content:''; position:absolute; inset:0; border-radius:16px; opacity:0; transition:opacity 0.25s; pointer-events:none; }
+.persona-card:hover { transform:translateY(-3px); box-shadow:0 8px 32px rgba(0,0,0,0.3); }
+.persona-card.selected { border-color:var(--p-color); box-shadow:0 0 0 1px var(--p-color),0 8px 32px var(--p-glow); }
+.persona-card.selected::before { opacity:1; background:var(--p-bg); }
+.persona-card.disabled { opacity:0.35; cursor:not-allowed; transform:none !important; box-shadow:none !important; }
+.persona-card[data-p="day"]   { --p-color:var(--day-c);   --p-glow:rgba(245,166,35,0.15);  --p-bg:rgba(245,166,35,0.04); }
+.persona-card[data-p="swing"] { --p-color:var(--swing-c); --p-glow:rgba(74,158,255,0.15);  --p-bg:rgba(74,158,255,0.04); }
+.persona-card[data-p="macro"] { --p-color:var(--macro-c); --p-glow:rgba(200,169,110,0.15); --p-bg:rgba(200,169,110,0.04); }
+.persona-icon { width:46px; height:46px; border-radius:12px; display:flex; align-items:center; justify-content:center; font-size:22px; margin-bottom:14px; transition:transform 0.25s; }
+.persona-card[data-p="day"]   .persona-icon { background:rgba(245,166,35,0.12); }
+.persona-card[data-p="swing"] .persona-icon { background:rgba(74,158,255,0.12); }
+.persona-card[data-p="macro"] .persona-icon { background:rgba(200,169,110,0.12); }
+.persona-card.selected .persona-icon { transform:scale(1.1); }
+.persona-name { font-family:'Syne',sans-serif; font-size:16px; font-weight:800; color:var(--text); margin-bottom:4px; transition:color 0.25s; }
+.persona-card.selected .persona-name { color:var(--p-color); }
+.persona-tagline { font-family:'JetBrains Mono',monospace; font-size:8px; letter-spacing:1.5px; color:var(--muted); text-transform:uppercase; margin-bottom:10px; }
+.persona-desc { font-size:12px; color:var(--text2); line-height:1.6; margin-bottom:14px; }
+.persona-tags { display:flex; flex-wrap:wrap; gap:5px; }
+.persona-tag { font-family:'JetBrains Mono',monospace; font-size:7px; letter-spacing:1px; padding:3px 8px; border-radius:20px; border:1px solid var(--border2); color:var(--muted); transition:all 0.25s; }
+.persona-card.selected .persona-tag { border-color:var(--p-color); color:var(--p-color); background:var(--p-bg); }
+.persona-check { position:absolute; top:14px; right:14px; width:20px; height:20px; border-radius:50%; background:var(--border2); border:1.5px solid var(--border2); display:flex; align-items:center; justify-content:center; font-size:9px; color:transparent; transition:all 0.25s; }
+.persona-card.selected .persona-check { background:var(--p-color); border-color:var(--p-color); color:#fff; }
+.persona-counter { font-family:'JetBrains Mono',monospace; font-size:10px; letter-spacing:1px; color:var(--muted); margin-bottom:20px; text-align:center; }
+.persona-counter strong { color:var(--gold); }
+.cta-btn { padding:14px 52px; background:linear-gradient(135deg,#c8961e,#b07d2a); border:none; border-radius:12px; color:#fff; font-family:'Syne',sans-serif; font-size:14px; font-weight:700; cursor:pointer; transition:all 0.2s; box-shadow:0 4px 24px rgba(176,125,42,0.35); display:flex; align-items:center; gap:10px; }
+.cta-btn:hover:not(:disabled) { transform:translateY(-2px); box-shadow:0 8px 32px rgba(176,125,42,0.5); }
+.cta-btn:disabled { opacity:0.4; cursor:not-allowed; transform:none; box-shadow:none; }
+.confirm-wrap { display:flex; flex-direction:column; align-items:center; gap:28px; }
+.confirm-icon { width:76px; height:76px; border-radius:50%; background:rgba(13,158,82,0.12); border:2px solid rgba(13,158,82,0.3); display:flex; align-items:center; justify-content:center; font-size:34px; animation:popIn 0.5s cubic-bezier(0.34,1.56,0.64,1) both; }
+@keyframes popIn { from{opacity:0;transform:scale(0.4)} to{opacity:1;transform:scale(1)} }
+.selected-personas { display:flex; gap:14px; justify-content:center; flex-wrap:wrap; }
+.selected-persona-pill { display:flex; align-items:center; gap:9px; padding:10px 20px; border-radius:40px; border:1.5px solid var(--p-color); background:var(--p-bg); font-family:'Syne',sans-serif; font-size:13px; font-weight:700; color:var(--p-color); }
+.onboard-footer { padding:18px 48px; border-top:1px solid var(--border); display:flex; align-items:center; justify-content:center; gap:6px; }
+.footer-dot { width:5px; height:5px; border-radius:50%; background:var(--border2); transition:background 0.3s; }
+.footer-dot.active { background:var(--gold); }
+</style>
+</head>
+<body>
+<div class="onboarding">
+  <nav class="onboard-nav">
+    <div class="nav-logo">
+      <div class="logo-mark">C</div>
+      <div class="nav-brand">Catalyst<em>IQ</em></div>
+    </div>
+    <div class="nav-steps">
+      <div class="step-pip active" id="pip1"></div>
+      <div class="step-pip" id="pip2"></div>
+      <div class="step-pip" id="pip3"></div>
+    </div>
+    <div style="width:120px"></div>
+  </nav>
+
+  <div class="onboard-body">
+
+    <!-- STEP 1 -->
+    <div class="step active" id="step1">
+      <div class="step-eyebrow">Step 1 of 3 — Create Account</div>
+      <h1 class="step-title">Your edge starts<br><span>here.</span></h1>
+      <p class="step-sub">Create your free account to personalize your market intelligence feed.</p>
+      <div class="auth-box">
+        <div class="auth-tabs">
+          <button class="auth-tab active" id="tabSignup" onclick="switchTab('signup')">Sign Up</button>
+          <button class="auth-tab" id="tabLogin" onclick="switchTab('login')">Log In</button>
+        </div>
+        <div id="signupForm">
+          <div class="form-group"><label class="form-label">Full Name</label><input class="form-input" id="signupName" type="text" placeholder="Your full name"></div>
+          <div class="form-group"><label class="form-label">Email</label><input class="form-input" id="signupEmail" type="email" placeholder="you@example.com"></div>
+          <div class="form-group"><label class="form-label">Password</label><input class="form-input" id="signupPassword" type="password" placeholder="Min. 8 characters"></div>
+          <button class="form-btn" id="signupBtn" onclick="handleSignup()">Create Account & Continue →</button>
+          <div class="auth-msg auth-error"  id="signupError"></div>
+          <div class="auth-msg auth-success" id="signupSuccess"></div>
+        </div>
+        <div id="loginForm" style="display:none">
+          <div class="form-group"><label class="form-label">Email</label><input class="form-input" id="loginEmail" type="email" placeholder="you@example.com"></div>
+          <div class="form-group"><label class="form-label">Password</label><input class="form-input" id="loginPassword" type="password" placeholder="Your password"></div>
+          <button class="form-btn" id="loginBtn" onclick="handleLogin()">Log In & Continue →</button>
+          <div class="auth-msg auth-error" id="loginError"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- STEP 2 -->
+    <div class="step" id="step2">
+      <div class="step-eyebrow">Step 2 of 3 — Trade Personas</div>
+      <h1 class="step-title">How do you<br><span>trade?</span></h1>
+      <p class="step-sub">Pick up to <strong style="color:var(--gold)">2 personas</strong>. Your feed filters to only show stories that match your style.</p>
+      <div class="options-note">
+        <div class="options-note-icon">🎯</div>
+        <div class="options-note-text"><strong>All personas include options plays.</strong> Every trade recommendation comes with an AI-suggested contract, strike price, entry zone, take profit, and stop loss. Your persona determines <em>which news stories</em> you see.</div>
+      </div>
+      <div class="persona-counter"><strong id="selCount">0</strong> / 2 selected</div>
+      <div class="persona-grid">
+        <div class="persona-card" data-p="day" onclick="togglePersona(this)">
+          <div class="persona-check">✓</div>
+          <div class="persona-icon">⚡</div>
+          <div class="persona-name">Day Trader</div>
+          <div class="persona-tagline">Intraday · Same-session</div>
+          <div class="persona-desc">You trade macro catalysts, Fed moves, and geopolitical shocks that move the whole market within a single session.</div>
+          <div class="persona-tags"><span class="persona-tag">INTRADAY</span><span class="persona-tag">MACRO</span><span class="persona-tag">FED / RATES</span><span class="persona-tag">GEO EVENTS</span></div>
+        </div>
+        <div class="persona-card" data-p="swing" onclick="togglePersona(this)">
+          <div class="persona-check">✓</div>
+          <div class="persona-icon">📈</div>
+          <div class="persona-name">Swing Trader</div>
+          <div class="persona-tagline">Days to weeks · Momentum</div>
+          <div class="persona-desc">You ride multi-day trends from earnings beats, crypto momentum, M&A announcements, and sector rotation plays.</div>
+          <div class="persona-tags"><span class="persona-tag">EARNINGS</span><span class="persona-tag">CRYPTO</span><span class="persona-tag">M&amp;A</span><span class="persona-tag">MOMENTUM</span></div>
+        </div>
+        <div class="persona-card" data-p="macro" onclick="togglePersona(this)">
+          <div class="persona-check">✓</div>
+          <div class="persona-icon">🌐</div>
+          <div class="persona-name">Macro Trader</div>
+          <div class="persona-tagline">Thematic · Weeks to months</div>
+          <div class="persona-desc">You trade geopolitical regimes — wars, shipping lane disruptions, sanctions, Fed policy cycles, and energy supply shocks.</div>
+          <div class="persona-tags"><span class="persona-tag">GEOPOLITICAL</span><span class="persona-tag">WARS / SANCTIONS</span><span class="persona-tag">ENERGY SHOCKS</span><span class="persona-tag">FED CYCLES</span></div>
+        </div>
+      </div>
+      <button class="cta-btn" id="personaBtn" onclick="savePersonas()" disabled>
+        <span id="personaBtnLabel">Confirm My Personas</span><span>→</span>
+      </button>
+      <div class="auth-msg auth-error" id="personaError" style="margin-top:12px"></div>
+    </div>
+
+    <!-- STEP 3 -->
+    <div class="step" id="step3">
+      <div class="step-eyebrow">Step 3 of 3 — You're All Set</div>
+      <h1 class="step-title">Welcome to<br><span>CatalystIQ.</span></h1>
+      <p class="step-sub">Your personalized feed is ready. Only stories matching your trading style will appear.</p>
+      <div class="confirm-wrap">
+        <div class="confirm-icon">✓</div>
+        <div class="selected-personas" id="confirmedPersonas"></div>
+        <div style="text-align:center">
+          <p style="font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:1.5px;color:var(--muted);margin-bottom:20px">YOUR FEED IS BEING PERSONALIZED</p>
+          <button class="cta-btn" onclick="window.location.href='index.html'" style="margin:0 auto"><span>Launch My Dashboard</span><span>→</span></button>
+        </div>
+        <div style="font-family:'JetBrains Mono',monospace;font-size:8px;letter-spacing:1px;color:var(--muted);text-align:center">You can change your personas anytime in Settings</div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="onboard-footer">
+    <div class="footer-dot active" id="fdot1"></div>
+    <div class="footer-dot" id="fdot2"></div>
+    <div class="footer-dot" id="fdot3"></div>
+  </div>
+</div>
+
+<script>
+const SUPABASE_URL = 'https://bjbvtwqckknngaamuaam.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_f_j6gPsZNgBqVFWAt6wKRg_pgJkQx7P';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+let currentStep = 1;
+let selectedPersonas = [];
+let currentUser = null;
+
+const PERSONA_META = {
+  day:   { name:'Day Trader',   icon:'⚡', color:'#f5a623', bg:'rgba(245,166,35,0.1)' },
+  swing: { name:'Swing Trader', icon:'📈', color:'#4a9eff', bg:'rgba(74,158,255,0.1)' },
+  macro: { name:'Macro Trader', icon:'🌐', color:'#c8a96e', bg:'rgba(200,169,110,0.1)' },
+};
+
+// Auto-redirect if already logged in with personas
+(async () => {
+  const { data: { session } } = await sb.auth.getSession();
+  if (session?.user) {
+    const { data: profile } = await sb.from('profiles').select('personas').eq('id', session.user.id).single();
+    if (profile?.personas?.length) {
+      window.location.href = 'index.html'; return;
+    }
+    currentUser = session.user;
+    goStep(2);
+  }
+})();
+
+function goStep(n) {
+  document.getElementById(`step${currentStep}`).classList.remove('active');
+  currentStep = n;
+  document.getElementById(`step${n}`).classList.add('active');
+  [1,2,3].forEach(i => {
+    document.getElementById(`pip${i}`).className = 'step-pip'+(i<n?' complete':i===n?' active':'');
+    document.getElementById(`fdot${i}`).className = 'footer-dot'+(i===n?' active':'');
+  });
+  if (n===3) buildConfirm();
+}
+
+function switchTab(tab) {
+  document.getElementById('tabSignup').classList.toggle('active', tab==='signup');
+  document.getElementById('tabLogin').classList.toggle('active', tab==='login');
+  document.getElementById('signupForm').style.display = tab==='signup'?'block':'none';
+  document.getElementById('loginForm').style.display  = tab==='login'?'block':'none';
+}
+
+async function handleSignup() {
+  const name=document.getElementById('signupName').value.trim();
+  const email=document.getElementById('signupEmail').value.trim();
+  const pass=document.getElementById('signupPassword').value;
+  const btn=document.getElementById('signupBtn');
+  const err=document.getElementById('signupError');
+  const suc=document.getElementById('signupSuccess');
+  err.style.display='none'; suc.style.display='none';
+  if (!name||!email||!pass){err.textContent='Please fill in all fields.';err.style.display='block';return;}
+  if (pass.length<8){err.textContent='Password must be at least 8 characters.';err.style.display='block';return;}
+  btn.disabled=true; btn.textContent='Creating account...';
+  const {data,error}=await sb.auth.signUp({email,password:pass,options:{data:{full_name:name}}});
+  if (error){err.textContent=error.message;err.style.display='block';btn.disabled=false;btn.textContent='Create Account & Continue →';return;}
+  currentUser=data.user;
+  if (data.session){goStep(2);}
+  else{suc.textContent='✓ Check your email to confirm, then log in.';suc.style.display='block';btn.disabled=false;btn.textContent='Create Account & Continue →';setTimeout(()=>switchTab('login'),3000);}
+}
+
+async function handleLogin() {
+  const email=document.getElementById('loginEmail').value.trim();
+  const pass=document.getElementById('loginPassword').value;
+  const btn=document.getElementById('loginBtn');
+  const err=document.getElementById('loginError');
+  err.style.display='none';
+  if (!email||!pass){err.textContent='Please fill in all fields.';err.style.display='block';return;}
+  btn.disabled=true; btn.textContent='Logging in...';
+  const {data,error}=await sb.auth.signInWithPassword({email,password:pass});
+  if (error){err.textContent=error.message;err.style.display='block';btn.disabled=false;btn.textContent='Log In & Continue →';return;}
+  currentUser=data.user;
+  const {data:profile}=await sb.from('profiles').select('personas').eq('id',currentUser.id).single();
+  if (profile?.personas?.length){window.location.href='index.html';}
+  else{goStep(2);}
+}
+
+function togglePersona(card) {
+  const p=card.getAttribute('data-p');
+  if (card.classList.contains('disabled')) return;
+  if (card.classList.contains('selected')){card.classList.remove('selected');selectedPersonas=selectedPersonas.filter(x=>x!==p);}
+  else{if(selectedPersonas.length>=2)return;card.classList.add('selected');selectedPersonas.push(p);}
+  document.querySelectorAll('.persona-card').forEach(c=>{c.classList.toggle('disabled',selectedPersonas.length>=2&&!c.classList.contains('selected'));});
+  document.getElementById('selCount').textContent=selectedPersonas.length;
+  document.getElementById('personaBtn').disabled=selectedPersonas.length===0;
+}
+
+async function savePersonas() {
+  if (!currentUser) return;
+  const btn=document.getElementById('personaBtn');
+  const lbl=document.getElementById('personaBtnLabel');
+  const err=document.getElementById('personaError');
+  err.style.display='none';
+  btn.disabled=true; lbl.textContent='Saving...';
+  const {error}=await sb.from('profiles').upsert({id:currentUser.id,personas:selectedPersonas});
+  if (error){err.textContent='Failed to save: '+error.message;err.style.display='block';btn.disabled=false;lbl.textContent='Confirm My Personas';return;}
+  localStorage.setItem('catalystiq-personas',JSON.stringify(selectedPersonas));
+  goStep(3);
+}
+
+function buildConfirm() {
+  document.getElementById('confirmedPersonas').innerHTML=selectedPersonas.map(p=>{
+    const m=PERSONA_META[p];
+    return `<div class="selected-persona-pill" style="--p-color:${m.color};--p-bg:${m.bg}"><span>${m.icon}</span>${m.name}</div>`;
+  }).join('');
+}
+</script>
+</body>
+</html>

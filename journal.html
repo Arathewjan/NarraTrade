@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CatalystIQ — Trade Journal</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600;700&family=Syne:wght@400;500;600;700;800&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+[data-theme="dark"]{--bg:#080a0d;--surface:#0d1017;--card:#0f1318;--border:#171e28;--border2:#1f2a38;--border3:#263040;--text:#e8edf5;--text2:#7a8fa8;--muted:#4a5568;--dim:#2a3a50;--gold:#c8a96e;--gold-dim:rgba(200,169,110,0.08);--gold-border:rgba(200,169,110,0.22);--bull:#0d9e52;--bull-light:rgba(13,158,82,0.1);--bull-mid:rgba(13,158,82,0.28);--bull-text:#34d07a;--bear:#dc1f3b;--bear-light:rgba(220,31,59,0.08);--bear-mid:rgba(220,31,59,0.28);--bear-text:#f05252;--header-bg:rgba(8,10,13,0.97);--shadow:0 1px 16px rgba(0,0,0,0.5);--card-shadow:0 1px 4px rgba(0,0,0,0.3)}
+[data-theme="light"]{--bg:#f4f6f9;--surface:#fff;--card:#fff;--border:#e2e8f0;--border2:#cbd5e1;--border3:#b0bfcf;--text:#0d1520;--text2:#475569;--muted:#94a3b8;--dim:#cbd5e1;--gold:#b07d2a;--gold-dim:rgba(176,125,42,0.08);--gold-border:rgba(176,125,42,0.25);--bull:#0d9e52;--bull-light:#e8faf1;--bull-mid:#b6ecd2;--bull-text:#076636;--bear:#dc1f3b;--bear-light:#fef0f2;--bear-mid:#fac5cc;--bear-text:#9b0e22;--header-bg:rgba(255,255,255,0.97);--shadow:0 1px 16px rgba(0,0,0,0.08);--card-shadow:0 1px 6px rgba(0,0,0,0.05)}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--text);font-family:'Syne',sans-serif;font-size:13px;min-height:100vh;-webkit-font-smoothing:antialiased;transition:background .3s,color .3s}
+header{position:sticky;top:0;z-index:200;background:var(--header-bg);backdrop-filter:blur(16px);border-bottom:1px solid var(--border2);padding:0 32px;height:60px;display:flex;align-items:center;justify-content:space-between;box-shadow:var(--shadow)}
+.logo-mark{width:34px;height:34px;background:linear-gradient(140deg,#c8961e,#b07d2a);border-radius:9px;display:flex;align-items:center;justify-content:center;font-family:'Cormorant Garamond',serif;font-size:19px;font-weight:700;color:#fff;box-shadow:0 2px 10px rgba(176,125,42,.35);cursor:pointer;flex-shrink:0}
+.masthead{display:flex;align-items:center;gap:12px}
+.masthead-title{font-family:'Syne',sans-serif;font-size:18px;font-weight:800;color:var(--text);letter-spacing:-.5px;cursor:pointer}
+.masthead-title em{color:var(--gold);font-style:normal}
+.header-right{display:flex;align-items:center;gap:12px}
+.nav-link{font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:1.5px;color:var(--muted);padding:5px 12px;border-radius:20px;border:1px solid transparent;transition:all .15s;cursor:pointer;background:none;text-decoration:none}
+.nav-link:hover{color:var(--text2);border-color:var(--border2)}
+.nav-link.active{color:var(--gold);border-color:var(--gold-border);background:var(--gold-dim)}
+.theme-toggle{display:flex;align-items:center;gap:8px;cursor:pointer;padding:5px 6px 5px 11px;border-radius:22px;border:1.5px solid var(--border2);background:var(--surface);transition:all .3s;user-select:none}
+.toggle-label{font-family:'JetBrains Mono',monospace;font-size:8px;letter-spacing:1.5px;color:var(--muted)}
+.toggle-track{width:34px;height:18px;background:var(--border2);border-radius:9px;position:relative;transition:background .3s;flex-shrink:0}
+[data-theme="light"] .toggle-track{background:var(--gold)}
+.toggle-thumb{position:absolute;top:2px;left:2px;width:14px;height:14px;border-radius:50%;background:#fff;box-shadow:0 1px 4px rgba(0,0,0,.2);transition:transform .3s cubic-bezier(.34,1.56,.64,1);display:flex;align-items:center;justify-content:center;font-size:8px}
+[data-theme="light"] .toggle-thumb{transform:translateX(16px)}
+.page-header{padding:32px 32px 0;display:flex;align-items:flex-end;justify-content:space-between}
+.page-eyebrow{font-family:'JetBrains Mono',monospace;font-size:8px;letter-spacing:3px;color:var(--gold);text-transform:uppercase;margin-bottom:8px}
+.page-title{font-family:'Cormorant Garamond',serif;font-size:42px;font-weight:700;color:var(--text);letter-spacing:-1px;line-height:1}
+.page-title em{color:var(--gold);font-style:italic}
+.page-actions{display:flex;align-items:center;gap:10px}
+.btn-outline{font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:1.5px;padding:8px 16px;border-radius:20px;border:1px solid var(--border2);background:none;color:var(--muted);cursor:pointer;transition:all .15s}
+.btn-outline:hover{border-color:var(--gold-border);color:var(--gold)}
+.stats-row{display:grid;grid-template-columns:repeat(5,1fr);gap:16px;padding:28px 32px 0}
+.stat-card{background:var(--card);border:1px solid var(--border2);border-radius:12px;padding:18px 20px;box-shadow:var(--card-shadow)}
+.stat-label{font-family:'JetBrains Mono',monospace;font-size:8px;letter-spacing:2px;color:var(--muted);text-transform:uppercase;margin-bottom:10px}
+.stat-value{font-family:'Cormorant Garamond',serif;font-size:32px;font-weight:700;line-height:1;color:var(--text);margin-bottom:4px}
+.stat-value.green{color:var(--bull-text)} .stat-value.red{color:var(--bear-text)} .stat-value.gold{color:var(--gold)} .stat-value.blue{color:#4a9eff}
+.stat-sub{font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--muted)}
+.journal-tabs{display:flex;align-items:center;padding:24px 32px 0;border-bottom:1px solid var(--border)}
+.j-tab{font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:1.5px;text-transform:uppercase;padding:0 18px;height:40px;border:none;background:none;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;transition:all .15s}
+.j-tab:hover{color:var(--text2)} .j-tab.active{color:var(--gold);border-bottom-color:var(--gold)}
+.journal-wrap{padding:24px 32px}
+.journal-table{width:100%;border-collapse:separate;border-spacing:0 8px}
+.jt-head th{font-family:'JetBrains Mono',monospace;font-size:8px;letter-spacing:2px;color:var(--muted);text-transform:uppercase;padding:0 16px 8px;text-align:left}
+.jt-head th:last-child{text-align:right}
+.trade-row{background:var(--card);border-radius:10px;transition:all .2s;cursor:pointer}
+.trade-row:hover{background:var(--surface)}
+.trade-row td{padding:14px 16px;border-top:1px solid var(--border);border-bottom:1px solid var(--border)}
+.trade-row td:first-child{border-left:1px solid var(--border);border-radius:10px 0 0 10px;padding-left:14px}
+.trade-row td:last-child{border-right:1px solid var(--border);border-radius:0 10px 10px 0;text-align:right}
+.trade-row.open td:first-child{border-left:3px solid #4a9eff}
+.trade-ticker{font-family:'Syne',sans-serif;font-size:14px;font-weight:700;color:var(--text)}
+.trade-contract{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--text2)}
+.call{color:#34d07a;font-weight:600} .put{color:#f05252;font-weight:600}
+.trade-date{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--muted)}
+.trade-price{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--text)}
+.trade-price-sub{font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--muted);margin-top:1px}
+.status-badge{font-family:'JetBrains Mono',monospace;font-size:8px;letter-spacing:1px;padding:3px 9px;border-radius:20px}
+.sb-open{background:rgba(74,158,255,.1);color:#4a9eff;border:1px solid rgba(74,158,255,.25)}
+.trade-detail{display:none}
+.trade-detail.open{display:table-row}
+.trade-detail td{padding:0 16px 16px;background:var(--card);border-bottom:1px solid var(--border);border-left:1px solid var(--border);border-right:1px solid var(--border);border-radius:0 0 10px 10px}
+.detail-inner{background:rgba(0,0,0,.2);border-radius:8px;padding:14px 16px;display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+.detail-field{display:flex;flex-direction:column;gap:4px}
+.df-label{font-family:'JetBrains Mono',monospace;font-size:7px;letter-spacing:2px;color:var(--muted);text-transform:uppercase}
+.df-value{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--text2)}
+.df-value.gold{color:var(--gold)} .df-value.green{color:var(--bull-text)} .df-value.red{color:var(--bear-text)}
+.detail-full{grid-column:1/-1}
+.detail-actions{grid-column:1/-1;display:flex;gap:8px;padding-top:8px;border-top:1px solid var(--border);margin-top:4px}
+.da-btn{font-family:'JetBrains Mono',monospace;font-size:8px;letter-spacing:1px;padding:5px 14px;border-radius:20px;cursor:pointer;transition:all .15s}
+.da-delete{background:none;color:var(--muted);border:1px solid var(--border2);margin-left:auto}
+.da-delete:hover{border-color:var(--bear-mid);color:var(--bear-text)}
+.empty-state{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:80px 0;color:var(--muted);gap:16px;text-align:center}
+.empty-icon{font-size:40px;opacity:.3}
+.empty-title{font-family:'Cormorant Garamond',serif;font-size:26px;color:var(--muted)}
+.empty-sub{font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:1px;color:var(--dim);max-width:360px;line-height:1.7}
+.empty-cta{font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:1.5px;padding:10px 24px;border-radius:20px;border:none;background:linear-gradient(135deg,#c8961e,#b07d2a);color:#fff;cursor:pointer;transition:all .2s;margin-top:8px}
+.empty-cta:hover{box-shadow:0 0 16px rgba(176,125,42,.4)}
+::-webkit-scrollbar{width:3px} ::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
+</style>
+</head>
+<body>
+<header>
+  <div class="masthead">
+    <div class="logo-mark" onclick="window.location.href='index.html'">C</div>
+    <div class="masthead-title" onclick="window.location.href='index.html'">Catalyst<em>IQ</em></div>
+  </div>
+  <div class="header-right">
+    <button class="nav-link" onclick="window.location.href='index.html'">DASHBOARD</button>
+    <span class="nav-link active">JOURNAL</span>
+    <span id="userLabel" style="font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:1px;color:var(--muted)"></span>
+    <div class="theme-toggle" onclick="toggleTheme()">
+      <span class="toggle-label" id="toggleLabel">DARK</span>
+      <div class="toggle-track"><div class="toggle-thumb"><span id="toggleIcon">☾</span></div></div>
+    </div>
+  </div>
+</header>
+<div class="page-header">
+  <div><div class="page-eyebrow">Trade Journal</div><div class="page-title">My <em>Trades</em></div></div>
+  <div class="page-actions">
+    <button class="btn-outline" onclick="exportCSV()">↓ EXPORT CSV</button>
+    <button class="btn-outline" onclick="if(confirm('Clear all trades?')){localStorage.removeItem('catalystiq-trades');loadTrades();}">✕ CLEAR ALL</button>
+  </div>
+</div>
+<div class="stats-row">
+  <div class="stat-card"><div class="stat-label">Total Trades</div><div class="stat-value" id="statTotal">0</div><div class="stat-sub">Logged trades</div></div>
+  <div class="stat-card"><div class="stat-label">Calls</div><div class="stat-value green" id="statCalls">0</div><div class="stat-sub">Bullish contracts</div></div>
+  <div class="stat-card"><div class="stat-label">Puts</div><div class="stat-value red" id="statPuts">0</div><div class="stat-sub">Bearish contracts</div></div>
+  <div class="stat-card"><div class="stat-label">Avg Contracts</div><div class="stat-value gold" id="statAvgQty">0</div><div class="stat-sub">Per trade</div></div>
+  <div class="stat-card"><div class="stat-label">Open Positions</div><div class="stat-value blue" id="statOpen">0</div><div class="stat-sub">Active trades</div></div>
+</div>
+<div class="journal-tabs">
+  <button class="j-tab active" onclick="setTab('all',this)">All Trades</button>
+  <button class="j-tab" onclick="setTab('call',this)">Calls</button>
+  <button class="j-tab" onclick="setTab('put',this)">Puts</button>
+</div>
+<div class="journal-wrap">
+  <table class="journal-table">
+    <thead class="jt-head"><tr><th>Ticker / Contract</th><th>Date Logged</th><th>Entry Premium</th><th>Strike</th><th>TP / SL</th><th>Contracts</th><th>Status</th></tr></thead>
+    <tbody id="journalBody"></tbody>
+  </table>
+  <div id="emptyState" style="display:none">
+    <div class="empty-state">
+      <div class="empty-icon">📓</div>
+      <div class="empty-title">No trades logged yet</div>
+      <div class="empty-sub">Go to the dashboard, find a trade play, tap the purple options line on any card, fill in your details and hit Save to Journal.</div>
+      <button class="empty-cta" onclick="window.location.href='index.html'">GO TO DASHBOARD →</button>
+    </div>
+  </div>
+</div>
+<script>
+const SUPABASE_URL='https://bjbvtwqckknngaamuaam.supabase.co';
+const SUPABASE_KEY='sb_publishable_f_j6gPsZNgBqVFWAt6wKRg_pgJkQx7P';
+const sb=supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+let allTrades=[],activeTab='all';
+(async()=>{
+  const {data:{session}}=await sb.auth.getSession();
+  if(!session?.user){window.location.href='onboarding.html';return;}
+  const name=session.user.user_metadata?.full_name||session.user.email.split('@')[0];
+  document.getElementById('userLabel').textContent=name.toUpperCase();
+  loadTrades();
+})();
+function applyTheme(t){document.documentElement.setAttribute('data-theme',t);document.getElementById('toggleLabel').textContent=t==='light'?'LIGHT':'DARK';document.getElementById('toggleIcon').textContent=t==='light'?'☀':'☾';localStorage.setItem('catalystiq-theme',t);}
+function toggleTheme(){applyTheme(document.documentElement.getAttribute('data-theme')==='dark'?'light':'dark');}
+(function(){const s=localStorage.getItem('catalystiq-theme');if(s&&s!=='dark')applyTheme(s);})();
+function loadTrades(){allTrades=JSON.parse(localStorage.getItem('catalystiq-trades')||'[]');updateStats();renderJournal();}
+function updateStats(){
+  const calls=allTrades.filter(t=>t.type==='CALL').length;
+  const puts=allTrades.filter(t=>t.type==='PUT').length;
+  const totalQty=allTrades.reduce((s,t)=>s+(parseInt(t.qty)||0),0);
+  document.getElementById('statTotal').textContent=allTrades.length;
+  document.getElementById('statCalls').textContent=calls;
+  document.getElementById('statPuts').textContent=puts;
+  document.getElementById('statAvgQty').textContent=allTrades.length?(totalQty/allTrades.length).toFixed(1):'0';
+  document.getElementById('statOpen').textContent=allTrades.length;
+}
+function setTab(tab,btn){activeTab=tab;document.querySelectorAll('.j-tab').forEach(t=>t.classList.remove('active'));btn.classList.add('active');renderJournal();}
+function renderJournal(){
+  let trades=allTrades;
+  if(activeTab==='call')trades=allTrades.filter(t=>t.type==='CALL');
+  if(activeTab==='put')trades=allTrades.filter(t=>t.type==='PUT');
+  const empty=document.getElementById('emptyState'),body=document.getElementById('journalBody');
+  if(!trades.length){body.innerHTML='';empty.style.display='block';return;}
+  empty.style.display='none';
+  body.innerHTML=trades.map((t,i)=>{
+    const typeHtml=t.type==='CALL'?'<span class="call">CALL</span>':'<span class="put">PUT</span>';
+    const dateStr=t.logged_at?new Date(t.logged_at).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}):'Unknown';
+    const timeStr=t.logged_at?new Date(t.logged_at).toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'}):'';
+    return `<tr class="trade-row open" onclick="toggleDetail(${i})">
+      <td><div class="trade-ticker">${esc(t.ticker||'—')}</div><div class="trade-contract">${esc(t.expiry||'')} ${typeHtml}</div></td>
+      <td><div class="trade-date">${dateStr}</div><div class="trade-date" style="color:var(--dim)">${timeStr}</div></td>
+      <td><div class="trade-price">${t.entry||'—'}</div></td>
+      <td><div class="trade-price">${t.strike||'—'}</div></td>
+      <td><div class="trade-price" style="color:var(--bull-text)">${t.tp||'—'}</div><div class="trade-price-sub" style="color:var(--bear-text)">SL ${t.sl||'—'}</div></td>
+      <td><div class="trade-price">${t.qty||'—'}</div></td>
+      <td><span class="status-badge sb-open">OPEN</span></td>
+    </tr>
+    <tr class="trade-detail" id="detail-${i}">
+      <td colspan="7">
+        <div class="detail-inner">
+          <div class="detail-field"><div class="df-label">Ticker</div><div class="df-value gold">${esc(t.ticker||'—')}</div></div>
+          <div class="detail-field"><div class="df-label">Expiry</div><div class="df-value">${esc(t.expiry||'—')}</div></div>
+          <div class="detail-field"><div class="df-label">Type</div><div class="df-value" style="color:${t.type==='CALL'?'#34d07a':'#f05252'}">${t.type||'—'}</div></div>
+          <div class="detail-field"><div class="df-label">Strike</div><div class="df-value gold">${t.strike||'—'}</div></div>
+          <div class="detail-field"><div class="df-label">Entry Premium</div><div class="df-value gold">${t.entry||'—'}</div></div>
+          <div class="detail-field"><div class="df-label">Contracts</div><div class="df-value">${t.qty||'—'}</div></div>
+          <div class="detail-field"><div class="df-label">Take Profit</div><div class="df-value green">${t.tp||'—'}</div></div>
+          <div class="detail-field"><div class="df-label">Stop Loss</div><div class="df-value red">${t.sl||'—'}</div></div>
+          ${t.note?`<div class="detail-field detail-full"><div class="df-label">Notes</div><div class="df-value" style="color:var(--text2);line-height:1.6">${esc(t.note)}</div></div>`:''}
+          <div class="detail-actions"><button class="da-btn da-delete" onclick="deleteTrade(${i},event)">✕ DELETE</button></div>
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
+}
+function toggleDetail(i){document.getElementById('detail-'+i)?.classList.toggle('open');}
+function deleteTrade(i,e){e.stopPropagation();if(!confirm('Delete this trade?'))return;allTrades.splice(i,1);localStorage.setItem('catalystiq-trades',JSON.stringify(allTrades));updateStats();renderJournal();}
+function exportCSV(){
+  if(!allTrades.length){alert('No trades to export.');return;}
+  const h=['Ticker','Expiry','Type','Strike','Entry','Contracts','Take Profit','Stop Loss','Notes','Date'];
+  const rows=allTrades.map(t=>[t.ticker,t.expiry,t.type,t.strike,t.entry,t.qty,t.tp,t.sl,t.note,t.logged_at].map(v=>'"'+(v||'').replace(/"/g,'""')+'"'));
+  const csv=[h,...rows].map(r=>r.join(',')).join('\n');
+  const a=document.createElement('a');a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv);a.download='catalystiq-journal-'+new Date().toISOString().slice(0,10)+'.csv';a.click();
+}
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+</script>
+</body>
+</html>
