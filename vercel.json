@@ -8,7 +8,10 @@
   "routes": [
     { "src": "/api/(.*)", "dest": "/api/$1" },
     { "src": "/onboarding", "dest": "/onboarding.html" },
+    { "src": "/onboarding.html", "dest": "/onboarding.html" },
     { "src": "/journal", "dest": "/journal.html" },
+    { "src": "/journal.html", "dest": "/journal.html" },
+    { "src": "/", "dest": "/onboarding.html" },
     { "src": "/(.*)", "dest": "/index.html" }
   ]
 }
