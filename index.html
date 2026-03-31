@@ -97,14 +97,14 @@ header { position:sticky; top:0; z-index:200; background:rgba(8,10,13,0.97); bac
 .news-card.bullish { border-left:5px solid var(--bull); }
 .news-card.bearish { border-left:5px solid var(--bear); }
 .news-card.mixed   { border-left:5px solid var(--neut); }
-.news-card.bullish:hover { border-color:var(--bull-mid); box-shadow:0 6px 28px rgba(13,158,82,0.13); }
-.news-card.bearish:hover { border-color:var(--bear-mid); box-shadow:0 6px 28px rgba(220,31,59,0.12); }
-.news-card.mixed:hover   { border-color:var(--neut-mid); box-shadow:0 6px 24px rgba(217,119,6,0.10); }
+.news-card.bullish:hover { border-color:var(--border3); box-shadow:0 4px 20px rgba(0,0,0,0.25); }
+.news-card.bearish:hover { border-color:var(--border3); box-shadow:0 4px 20px rgba(0,0,0,0.25); }
+.news-card.mixed:hover   { border-color:var(--border3); box-shadow:0 4px 20px rgba(0,0,0,0.25); }
 
 .card-stripe { height:3px; }
-.bullish .card-stripe { background:linear-gradient(90deg,var(--bull),transparent); }
-.bearish .card-stripe { background:linear-gradient(90deg,var(--bear),transparent); }
-.mixed   .card-stripe { background:linear-gradient(90deg,var(--neut),transparent); }
+.bullish .card-stripe { background:linear-gradient(90deg,rgba(13,158,82,0.4),transparent); }
+.bearish .card-stripe { background:linear-gradient(90deg,rgba(220,31,59,0.35),transparent); }
+.mixed   .card-stripe { background:linear-gradient(90deg,rgba(217,119,6,0.35),transparent); }
 
 /* Persona match badge */
 .persona-match-strip { display:flex; align-items:center; gap:7px; padding:10px 18px 0; }
@@ -300,7 +300,7 @@ header { position:sticky; top:0; z-index:200; background:rgba(8,10,13,0.97); bac
     <div style="display:flex;align-items:center;gap:12px">
       <div class="logo-mark">C</div>
       <div>
-        <div class="masthead-title">Catalyst<em>IQ</em></div>
+        <div class="masthead-title">Narra<em>Trade</em></div>
         <div class="masthead-sub">Live Wire · Finnhub + AI Trade Briefs</div>
       </div>
     </div>
@@ -660,7 +660,7 @@ header { position:sticky; top:0; z-index:200; background:rgba(8,10,13,0.97); bac
     <div style="display:flex;align-items:center;gap:12px">
       <div class="logo-mark">C</div>
       <div>
-        <div class="masthead-title">Catalyst<em>IQ</em></div>
+        <div class="masthead-title">Narra<em>Trade</em></div>
         <div class="masthead-sub">Live Wire · Finnhub + AI Trade Briefs</div>
       </div>
     </div>
@@ -706,310 +706,6 @@ header { position:sticky; top:0; z-index:200; background:rgba(8,10,13,0.97); bac
   <button class="filter-btn">M&amp;A</button>
 </div>
 
-<div class="layout">
-  <div class="feed">
-    <div class="feed-header">
-      <div class="feed-label">NarraTrade Live Feed</div>
-      <span class="last-fetch" id="lastFetch"></span><span class="story-count" id="storyCount"></span>
-    </div>
-
-    <div class="persona-notice options">
-      <span>⚡</span>
-      <span>Showing stories matched to your <strong>Options Trader</strong> &amp; <strong>Day Trader</strong> personas. Stories outside your profile are hidden.</span>
-    </div>
-
-    <!-- ══ CARD 1: GEOPOLITICAL — OPTIONS + DAY ══ -->
-    <div class="news-card bearish" style="animation-delay:0s">
-      <div class="card-stripe"></div>
-      <div class="persona-match-strip">
-        <div class="pmb pmb-options"><div class="pmb-dot"></div>🎯 OPTIONS TRADER</div>
-        <div class="pmb pmb-day"><div class="pmb-dot"></div>⚡ DAY TRADER</div>
-      </div>
-      <div class="card-top">
-        <div class="card-meta">
-          <span class="impact-badge impact-bearish"><span class="sig-dot bear"></span>▼ BEARISH</span>
-          <span class="category-tag">GEOPOLITICAL</span>
-          <span class="card-age">2h ago</span>
-        </div>
-        <div class="card-headline">Strait of Hormuz partially blocked as Iran deploys naval assets amid escalating tensions</div>
-        <div class="card-one-liner">Oil supply shock risk surges — energy names and defense sector in focus</div>
-        <div class="card-summary">Iran moved naval vessels into the Strait of Hormuz following U.S. sanctions escalation, raising fears of an energy supply disruption affecting 20% of global oil flow.</div>
-        <div class="card-footer">
-          <div class="card-source">Bloomberg</div>
-          <a class="card-link" href="#">READ FULL STORY →</a>
-        </div>
-      </div>
-      <div class="trade-brief">
-        <div class="brief-header">
-          <div class="brief-label">⚡ TRADE PLAYS</div>
-          <button class="analyze-btn">Deep Analysis</button>
-        </div>
-        <div class="trade-plays">
-
-          <!-- Play 1: COMMODITY -->
-          <div class="trade-play commodity-play">
-            <div class="play-dir dir-commodity">COMMODITY</div>
-            <div class="play-body">
-              <div class="play-ticker">USO <span>US Oil Fund</span></div>
-              <div class="play-rationale">Supply shock risk directly lifts crude prices.</div>
-              <div class="play-conviction"><div class="conviction-dots"><div class="conviction-dot filled"></div><div class="conviction-dot filled"></div><div class="conviction-dot filled"></div></div>CONVICTION: HIGH · COMMODITY</div>
-            </div>
-          </div>
-          <!-- Options line for USO -->
-          <div class="options-line" onclick="toggleLog('uso')">
-            <span class="ol-icon">📋</span>
-            <span class="ol-contract">
-              <span class="ol-ticker">USO</span>
-              <span class="ol-expiry"> 04/03/26</span>
-              <span class="ol-strike"> $77.00</span>
-            </span>
-            <span class="ol-type-call">CALL</span>
-            <span class="ol-sep">·</span>
-            <span class="ol-field"><span class="ol-field-label">ENTRY</span><span class="ol-field-val entry">$1.80–$2.20</span></span>
-            <span class="ol-sep">·</span>
-            <span class="ol-field"><span class="ol-field-label">TP</span><span class="ol-field-val tp">$4.00</span></span>
-            <span class="ol-sep">·</span>
-            <span class="ol-field"><span class="ol-field-label">SL</span><span class="ol-field-val sl">$0.90</span></span>
-            <span class="ol-ai-tag">✦ AI · TAP TO LOG</span>
-          </div>
-          <div class="options-log-drawer" id="log-uso">
-            <div class="log-drawer-title">Log your trade — USO 04/03/26 $77.00 CALL</div>
-            <div class="log-row">
-              <div class="log-field"><div class="log-label">Your Strike</div><input class="log-input" id="uso-strike" placeholder="e.g. $77.00"></div>
-              <div class="log-field"><div class="log-label">Your Entry Premium</div><input class="log-input" id="uso-entry" placeholder="e.g. $1.95"></div>
-              <div class="log-field"><div class="log-label">Contracts</div><input class="log-input" id="uso-qty" placeholder="e.g. 5"></div>
-            </div>
-            <div class="log-row">
-              <div class="log-field"><div class="log-label">Take Profit</div><input class="log-input" id="uso-tp" placeholder="e.g. $4.00"></div>
-              <div class="log-field"><div class="log-label">Stop Loss</div><input class="log-input" id="uso-sl" placeholder="e.g. $0.90"></div>
-              <div class="log-field"><div class="log-label">Notes</div><input class="log-input" id="uso-note" placeholder="Hormuz binary event..."></div>
-            </div>
-            <div class="log-actions">
-              <button class="log-save-btn" onclick="saveLog('uso')">SAVE TO JOURNAL</button>
-              <div class="log-saved-msg" id="uso-saved">✓ SAVED TO JOURNAL</div>
-            </div>
-          </div>
-
-          <!-- Play 2: LONG -->
-          <div class="trade-play long-play">
-            <div class="play-dir dir-long">LONG</div>
-            <div class="play-body">
-              <div class="play-ticker">XOM <span>ExxonMobil</span></div>
-              <div class="play-rationale">Integrated majors benefit from oil price spike.</div>
-              <div class="play-conviction"><div class="conviction-dots"><div class="conviction-dot filled"></div><div class="conviction-dot filled"></div><div class="conviction-dot"></div></div>CONVICTION: MED · EQUITY</div>
-            </div>
-          </div>
-          <!-- Options line for XOM -->
-          <div class="options-line" onclick="toggleLog('xom')">
-            <span class="ol-icon">📋</span>
-            <span class="ol-contract">
-              <span class="ol-ticker">XOM</span>
-              <span class="ol-expiry"> 04/17/26</span>
-              <span class="ol-strike"> $115.00</span>
-            </span>
-            <span class="ol-type-call">CALL</span>
-            <span class="ol-sep">·</span>
-            <span class="ol-field"><span class="ol-field-label">ENTRY</span><span class="ol-field-val entry">$2.10–$2.50</span></span>
-            <span class="ol-sep">·</span>
-            <span class="ol-field"><span class="ol-field-label">TP</span><span class="ol-field-val tp">$4.20</span></span>
-            <span class="ol-sep">·</span>
-            <span class="ol-field"><span class="ol-field-label">SL</span><span class="ol-field-val sl">$1.00</span></span>
-            <span class="ol-ai-tag">✦ AI · TAP TO LOG</span>
-          </div>
-          <div class="options-log-drawer" id="log-xom">
-            <div class="log-drawer-title">Log your trade — XOM 04/17/26 $115.00 CALL</div>
-            <div class="log-row">
-              <div class="log-field"><div class="log-label">Your Strike</div><input class="log-input" id="xom-strike" placeholder="e.g. $115.00"></div>
-              <div class="log-field"><div class="log-label">Your Entry Premium</div><input class="log-input" id="xom-entry" placeholder="e.g. $2.30"></div>
-              <div class="log-field"><div class="log-label">Contracts</div><input class="log-input" id="xom-qty" placeholder="e.g. 3"></div>
-            </div>
-            <div class="log-row">
-              <div class="log-field"><div class="log-label">Take Profit</div><input class="log-input" id="xom-tp" placeholder="e.g. $4.20"></div>
-              <div class="log-field"><div class="log-label">Stop Loss</div><input class="log-input" id="xom-sl" placeholder="e.g. $1.00"></div>
-              <div class="log-field"><div class="log-label">Notes</div><input class="log-input" id="xom-note" placeholder="Energy supply shock play..."></div>
-            </div>
-            <div class="log-actions">
-              <button class="log-save-btn" onclick="saveLog('xom')">SAVE TO JOURNAL</button>
-              <div class="log-saved-msg" id="xom-saved">✓ SAVED TO JOURNAL</div>
-            </div>
-          </div>
-
-        </div>
-      </div>
-    </div>
-
-    <!-- ══ CARD 2: EARNINGS — OPTIONS ══ -->
-    <div class="news-card mixed" style="animation-delay:0.07s">
-      <div class="card-stripe"></div>
-      <div class="persona-match-strip">
-        <div class="pmb pmb-options"><div class="pmb-dot"></div>🎯 OPTIONS TRADER</div>
-      </div>
-      <div class="card-top">
-        <div class="card-meta">
-          <span class="impact-badge impact-mixed"><span class="sig-dot neut"></span>◆ MIXED</span>
-          <span class="category-tag">EARNINGS</span>
-          <span class="card-age">4h ago</span>
-        </div>
-        <div class="card-headline">Nike misses Q3 revenue estimates but raises full-year guidance on Asia recovery</div>
-        <div class="card-one-liner">Beats on margins, misses on top line — options market pricing ±8% move</div>
-        <div class="card-summary">Nike reported Q3 revenue of $11.3B vs $11.6B expected, but raised FY guidance citing stronger-than-expected China demand recovery and margin improvements.</div>
-        <div class="card-footer">
-          <div class="card-source">WSJ</div>
-          <a class="card-link" href="#">READ FULL STORY →</a>
-        </div>
-      </div>
-      <div class="trade-brief">
-        <div class="brief-header">
-          <div class="brief-label">⚡ TRADE PLAYS</div>
-          <button class="analyze-btn">Deep Analysis</button>
-        </div>
-        <div class="trade-plays">
-
-          <div class="trade-play short-play">
-            <div class="play-dir dir-short">SHORT</div>
-            <div class="play-body">
-              <div class="play-ticker">NKE <span>Nike Inc.</span></div>
-              <div class="play-rationale">Revenue miss with elevated IV creates an attractive put spread. Target quick profit-taking within 48h.</div>
-              <div class="play-conviction"><div class="conviction-dots"><div class="conviction-dot filled"></div><div class="conviction-dot filled"></div><div class="conviction-dot filled"></div></div>CONVICTION: HIGH · EQUITY</div>
-            </div>
-          </div>
-          <div class="options-line" onclick="toggleLog('nke')">
-            <span class="ol-icon">📋</span>
-            <span class="ol-contract">
-              <span class="ol-ticker">NKE</span>
-              <span class="ol-expiry"> 04/18/26</span>
-              <span class="ol-strike"> $82.50</span>
-            </span>
-            <span class="ol-type-put">PUT</span>
-            <span class="ol-sep">·</span>
-            <span class="ol-field"><span class="ol-field-label">ENTRY</span><span class="ol-field-val entry">$2.40–$2.80</span></span>
-            <span class="ol-sep">·</span>
-            <span class="ol-field"><span class="ol-field-label">TP</span><span class="ol-field-val tp">$4.50</span></span>
-            <span class="ol-sep">·</span>
-            <span class="ol-field"><span class="ol-field-label">SL</span><span class="ol-field-val sl">$1.20</span></span>
-            <span class="ol-ai-tag">✦ AI · TAP TO LOG</span>
-          </div>
-          <div class="options-log-drawer" id="log-nke">
-            <div class="log-drawer-title">Log your trade — NKE 04/18/26 $82.50 PUT</div>
-            <div class="log-row">
-              <div class="log-field"><div class="log-label">Your Strike</div><input class="log-input" id="nke-strike" placeholder="e.g. $82.50"></div>
-              <div class="log-field"><div class="log-label">Your Entry Premium</div><input class="log-input" id="nke-entry" placeholder="e.g. $2.60"></div>
-              <div class="log-field"><div class="log-label">Contracts</div><input class="log-input" id="nke-qty" placeholder="e.g. 10"></div>
-            </div>
-            <div class="log-row">
-              <div class="log-field"><div class="log-label">Take Profit</div><input class="log-input" id="nke-tp" placeholder="e.g. $4.50"></div>
-              <div class="log-field"><div class="log-label">Stop Loss</div><input class="log-input" id="nke-sl" placeholder="e.g. $1.20"></div>
-              <div class="log-field"><div class="log-label">Notes</div><input class="log-input" id="nke-note" placeholder="Post-earnings IV crush risk..."></div>
-            </div>
-            <div class="log-actions">
-              <button class="log-save-btn" onclick="saveLog('nke')">SAVE TO JOURNAL</button>
-              <div class="log-saved-msg" id="nke-saved">✓ SAVED TO JOURNAL</div>
-            </div>
-          </div>
-
-        </div>
-      </div>
-    </div>
-
-    <!-- ══ CARD 3: MACRO/FED — DAY TRADER — standard log ══ -->
-    <div class="news-card bearish" style="animation-delay:0.14s">
-      <div class="card-stripe"></div>
-      <div class="persona-match-strip">
-        <div class="pmb pmb-day"><div class="pmb-dot"></div>⚡ DAY TRADER</div>
-      </div>
-      <div class="card-top">
-        <div class="card-meta">
-          <span class="impact-badge impact-bearish"><span class="sig-dot bear"></span>▼ BEARISH</span>
-          <span class="category-tag">MACRO / FED</span>
-          <span class="card-age">1h ago</span>
-        </div>
-        <div class="card-headline">Fed signals rates to stay higher for longer as PCE inflation data disappoints</div>
-        <div class="card-one-liner">Higher-for-longer narrative reinforced — risk assets under broad pressure</div>
-        <div class="card-summary">Multiple Fed speakers pushed back on near-term rate cut expectations, citing stickier-than-expected core PCE and resilient labor markets.</div>
-        <div class="card-footer">
-          <div class="card-source">Reuters</div>
-          <a class="card-link" href="#">READ FULL STORY →</a>
-        </div>
-      </div>
-      <div class="trade-brief">
-        <div class="brief-header">
-          <div class="brief-label">⚡ TRADE PLAYS</div>
-          <button class="analyze-btn">Deep Analysis</button>
-        </div>
-        <div class="trade-plays">
-
-          <div class="trade-play short-play">
-            <div class="play-dir dir-short">SHORT</div>
-            <div class="play-body">
-              <div class="play-ticker">TLT <span>iShares 20Y Treasury ETF</span></div>
-              <div class="play-rationale">Higher-for-longer compresses long-duration bond prices; TLT remains structurally vulnerable.</div>
-              <div class="play-conviction"><div class="conviction-dots"><div class="conviction-dot filled"></div><div class="conviction-dot filled"></div><div class="conviction-dot filled"></div></div>CONVICTION: HIGH · ETF</div>
-            </div>
-          </div>
-
-          <!-- Standard log for non-options persona -->
-          <div class="trade-log">
-            <div class="trade-log-header" onclick="toggleTL('tlt')">
-              <div class="tl-label-wrap"><div class="tl-dot" id="tld-tlt"></div>LOG THIS TRADE</div>
-              <div class="tl-chev" id="tlc-tlt">▼</div>
-            </div>
-            <div class="trade-log-body" id="tlb-tlt">
-              <div class="tl-grid">
-                <div class="tl-field"><div class="tl-flabel">Entry Price</div><input class="tl-input" id="tlt-entry" placeholder="e.g. $84.20"></div>
-                <div class="tl-field"><div class="tl-flabel">Size</div><input class="tl-input" id="tlt-size" placeholder="e.g. 100 shares"></div>
-                <div class="tl-field"><div class="tl-flabel">Take Profit</div><input class="tl-input" id="tlt-tp" placeholder="e.g. $80.00"></div>
-                <div class="tl-field"><div class="tl-flabel">Stop Loss</div><input class="tl-input" id="tlt-sl" placeholder="e.g. $87.00"></div>
-                <div class="tl-field full"><div class="tl-flabel">Notes</div><input class="tl-input" id="tlt-note" placeholder="Fed hawkish, higher-for-longer confirms short..."></div>
-              </div>
-              <div class="tl-actions">
-                <button class="tl-save-btn" onclick="saveTL('tlt')">SAVE TO JOURNAL</button>
-                <div class="tl-saved" id="tls-tlt">✓ LOGGED</div>
-              </div>
-            </div>
-          </div>
-
-        </div>
-      </div>
-    </div>
-
-  </div>
-
-  <!-- SIDEBAR -->
-  <div class="sidebar">
-    <div class="sidebar-section">
-      <div class="sidebar-label">Fear &amp; Greed Index</div>
-      <div style="display:flex;flex-direction:column;align-items:center;margin-bottom:6px">
-        <div style="width:130px;height:70px;position:relative;overflow:hidden">
-          <svg viewBox="0 0 130 70" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:140px">
-            <defs><linearGradient id="gg" x1="0%" y1="0%" x2="100%" y2="0%">
-              <stop offset="0%" stop-color="#dc1f3b"/><stop offset="50%" stop-color="#d97706"/><stop offset="100%" stop-color="#0d9e52"/>
-            </linearGradient></defs>
-            <path id="gtrack" d="M 15 65 A 50 50 0 0 1 115 65" fill="none" stroke="#1e2836" stroke-width="9" stroke-linecap="round"/>
-            <path id="gfill" d="M 15 65 A 50 50 0 0 1 115 65" fill="none" stroke="url(#gg)" stroke-width="9" stroke-linecap="round" stroke-dasharray="157" stroke-dashoffset="157"/>
-            <line id="gneedle" x1="65" y1="65" x2="65" y2="20" stroke="#dc1f3b" stroke-width="2" stroke-linecap="round"/>
-            <circle cx="65" cy="65" r="4" fill="#dc1f3b" id="gdot"/><circle cx="65" cy="65" r="2" fill="white"/>
-          </svg>
-        </div>
-        <div style="font-family:'Cormorant Garamond',serif;font-size:36px;font-weight:700;color:var(--text);text-align:center;line-height:1;margin-top:-4px" id="fgVal">—</div>
-        <div style="font-family:'Syne',sans-serif;font-size:10px;font-weight:800;text-align:center;margin-top:4px;color:var(--muted)" id="fgLbl">LOADING</div>
-      </div>
-      <div style="display:flex;justify-content:space-between;font-family:'JetBrains Mono',monospace;font-size:7px;color:var(--muted);margin-top:6px"><span>FEAR</span><span>NEUTRAL</span><span>GREED</span></div>
-    </div>
-    <div class="sidebar-section">
-      <div class="sidebar-label">Market Pulse</div>
-      <div id="mktPulse"><div style="color:var(--muted);font-size:10px">Loading...</div></div>
-    </div>
-    <div class="sidebar-section">
-      <div class="sidebar-label">Sector Snapshot</div>
-      <div id="sectorHeat"><div style="color:var(--muted);font-size:10px">Loading...</div></div>
-    </div>
-    <div class="sidebar-section">
-      <div class="sidebar-label">Top AI Trade Plays</div>
-      <div id="topPlays"><div style="color:var(--muted);font-size:10px">Loads after feed</div></div>
-    </div>
-    <div class="disclaimer">⚠ Trade ideas are AI-generated. Not financial advice.</div>
-  </div>
-</div>
 <script>
 const SB_URL='https://bjbvtwqckknngaamuaam.supabase.co';
 const SB_KEY='sb_publishable_f_j6gPsZNgBqVFWAt6wKRg_pgJkQx7P';
