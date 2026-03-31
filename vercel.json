@@ -11,7 +11,9 @@
     { "src": "/onboarding.html", "dest": "/onboarding.html" },
     { "src": "/journal", "dest": "/journal.html" },
     { "src": "/journal.html", "dest": "/journal.html" },
+    { "src": "/index", "dest": "/index.html" },
+    { "src": "/index.html", "dest": "/index.html" },
     { "src": "/", "dest": "/onboarding.html" },
-    { "src": "/(.*)", "dest": "/index.html" }
+    { "src": "/(.*)", "dest": "/onboarding.html" }
   ]
 }
