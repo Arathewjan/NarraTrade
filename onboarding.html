@@ -316,6 +316,29 @@ const PERSONA_META = {
   macro: { name:'Macro Trader', icon:'🌐', color:'#c8a96e', bg:'rgba(200,169,110,0.1)' },
 };
 
+// Handle Supabase email confirmation redirect (contains #access_token in URL)
+(async () => {
+  const hash = window.location.hash;
+  if (hash && hash.includes('access_token')) {
+    // User just confirmed email - exchange token for session
+    const { data, error } = await sb.auth.getSession();
+    if (data?.session) {
+      // Check if they have personas already
+      const { data: profile } = await sb.from('profiles')
+        .select('personas').eq('id', data.session.user.id).single();
+      if (profile?.personas?.length) {
+        localStorage.setItem('narratrade-personas', JSON.stringify(profile.personas));
+        window.location.href = 'index.html';
+        return;
+      }
+      currentUser = data.session.user;
+      window.location.hash = ''; // clean the URL
+      goStep(2);
+      return;
+    }
+  }
+})();
+
 // Check session on load — redirect if already fully set up
 (async () => {
   try {
@@ -385,9 +408,13 @@ async function handleSignup() {
   btn.disabled = true;
   btn.textContent = 'Creating account...';
 
+  const redirectTo = window.location.origin + '/onboarding.html';
   const { data, error } = await sb.auth.signUp({
     email, password: pass,
-    options: { data: { full_name: name } }
+    options: {
+      data: { full_name: name },
+      emailRedirectTo: redirectTo
+    }
   });
 
   if (error) {
