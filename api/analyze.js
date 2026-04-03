@@ -4,8 +4,8 @@ export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   if (req.method === 'OPTIONS') return res.status(200).end();
 
-  const ANTHROPIC_KEY = process.env.ANTHROPIC_KEY;
-  if (!ANTHROPIC_KEY) return res.status(500).json({ error: 'ANTHROPIC_KEY not set' });
+  const ANTHROPIC_KEY = process.env.ANTHROPIC_API_KEY;
+  if (!ANTHROPIC_KEY) return res.status(500).json({ error: 'ANTHROPIC_API_KEY not set' });
 
   const { headline, summary, impact, category, plays } = req.body || {};
   if (!headline) return res.status(400).json({ error: 'No headline provided' });
