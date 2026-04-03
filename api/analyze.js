@@ -52,24 +52,4 @@ Be specific, direct, and actionable. No fluff.`;
   } catch (err) {
     return res.status(500).json({ error: err.message });
   }
-}4. Time horizon: intraday / swing (days-weeks) / position (months)
-5. Any correlated assets worth watching
-
-Be surgical and specific. Prose only, no bullet points, no headers.`,
-        }],
-      }),
-    });
-
-    if (!r.ok) {
-      const err = await r.json().catch(() => ({}));
-      throw new Error(err.error?.message || `Claude HTTP ${r.status}`);
-    }
-
-    const data = await r.json();
-    const text = (data.content || []).filter(c => c.type === 'text').map(c => c.text).join('');
-
-    return res.status(200).json({ analysis: text });
-  } catch (err) {
-    return res.status(500).json({ error: err.message });
-  }
 }
