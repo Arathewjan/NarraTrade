@@ -3,8 +3,8 @@ export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
   if (req.method === 'OPTIONS') return res.status(200).end();
 
-  const FINNHUB_KEY = process.env.FINNHUB_KEY;
-  if (!FINNHUB_KEY) return res.status(500).json({ error: 'FINNHUB_KEY not set' });
+  const FINNHUB_KEY = process.env.FINNHUB_API_KEY;
+  if (!FINNHUB_KEY) return res.status(500).json({ error: 'FINNHUB_API_KEY not set' });
 
   const cats = ['general', 'forex', 'crypto', 'merger'];
 
@@ -14,7 +14,10 @@ export default async function handler(req, res) {
         `https://finnhub.io/api/v1/news?category=${cat}&token=${FINNHUB_KEY}`,
         { headers: { 'User-Agent': 'NarraTrade/1.0' } }
       );
-      if (!r.ok) return [];
+      if (!r.ok) {
+        console.error(`Finnhub error for category "${cat}": ${r.status} ${r.statusText}`);
+        return [];
+      }
       const items = await r.json();
       return Array.isArray(items) ? items.map(i => ({ ...i, _cat: cat })) : [];
     }));
@@ -23,11 +26,10 @@ export default async function handler(req, res) {
     const seen = new Set();
     const merged = results.flat()
       .filter(i => i.id && i.headline && i.headline.length > 10)
-      .filter(i => !i.datetime || i.datetime > cutoff)
+      .filter(i => i.datetime && i.datetime > cutoff)
       .filter(i => {
-        const key = i.id || i.headline;
-        if (seen.has(key)) return false;
-        seen.add(key);
+        if (seen.has(i.id)) return false;
+        seen.add(i.id);
         return true;
       })
       .sort((a, b) => (b.datetime || 0) - (a.datetime || 0))
