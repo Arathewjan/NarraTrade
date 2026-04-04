@@ -1,11 +1,11 @@
-export default async function handler(req, res) {
+module.exports = async (req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   if (req.method === 'OPTIONS') return res.status(200).end();
 
-  const ANTHROPIC_KEY = process.env.ANTHROPIC_API_KEY;
-  if (!ANTHROPIC_KEY) return res.status(500).json({ error: 'ANTHROPIC_API_KEY not set' });
+  const ANTHROPIC_KEY = process.env.ANTHROPIC_KEY;
+  if (!ANTHROPIC_KEY) return res.status(500).json({ error: 'ANTHROPIC_KEY not set' });
 
   const { headline, summary, impact, category, plays } = req.body || {};
   if (!headline) return res.status(400).json({ error: 'No headline provided' });
@@ -20,7 +20,7 @@ CURRENT PLAYS: ${plays?.map(p => `${p.direction} ${p.ticker}`).join(', ') || 'No
 
 Write 3-4 sentences covering:
 1. What this means for markets right now
-2. Which sectors/assets are most affected and why  
+2. Which sectors/assets are most affected and why
 3. Key risk factors traders should watch
 4. Timeframe for this catalyst to play out
 
@@ -52,4 +52,4 @@ Be specific, direct, and actionable. No fluff.`;
   } catch (err) {
     return res.status(500).json({ error: err.message });
   }
-}
+};
