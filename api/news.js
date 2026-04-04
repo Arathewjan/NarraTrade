@@ -4,6 +4,7 @@ module.exports = async (req, res) => {
   if (req.method === 'OPTIONS') return res.status(200).end();
 
   const FINNHUB_KEY = process.env.FINNHUB_KEY;
+  console.log('[debug] FINNHUB_KEY length:', FINNHUB_KEY ? FINNHUB_KEY.length : 0);
   if (!FINNHUB_KEY) return res.status(500).json({ error: 'FINNHUB_KEY not set' });
 
   const cats = ['general', 'forex', 'crypto', 'merger'];
@@ -14,11 +15,13 @@ module.exports = async (req, res) => {
         `https://finnhub.io/api/v1/news?category=${cat}&token=${FINNHUB_KEY}`,
         { headers: { 'User-Agent': 'NarraTrade/1.0' } }
       );
+      console.log(`[debug] Finnhub "${cat}": status=${r.status}`);
       if (!r.ok) {
         console.error(`Finnhub error for category "${cat}": ${r.status} ${r.statusText}`);
         return [];
       }
       const items = await r.json();
+      console.log(`[debug] Finnhub "${cat}": count=${Array.isArray(items) ? items.length : 'not array'}, first=`, JSON.stringify(Array.isArray(items) ? items[0] : items));
       return Array.isArray(items) ? items.map(i => ({ ...i, _cat: cat })) : [];
     }));
 
