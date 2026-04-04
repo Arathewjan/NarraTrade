@@ -332,18 +332,18 @@ header { position:sticky; top:0; z-index:200; background:rgba(8,10,13,0.97); bac
 </div>
 
 <div class="filter-bar">
-  <button class="filter-btn active">All</button>
+  <button class="filter-btn active" onclick="setFilter('all', this)">All</button>
   <div class="filter-sep"></div>
-  <button class="filter-btn">▼ Bearish</button>
-  <button class="filter-btn">▲ Bullish</button>
-  <button class="filter-btn">◆ Mixed</button>
+  <button class="filter-btn" onclick="setFilter('bearish', this)">▼ Bearish</button>
+  <button class="filter-btn" onclick="setFilter('bullish', this)">▲ Bullish</button>
+  <button class="filter-btn" onclick="setFilter('mixed', this)">◆ Mixed</button>
   <div class="filter-sep"></div>
-  <button class="filter-btn">Geopolitical</button>
-  <button class="filter-btn">Macro / Fed</button>
-  <button class="filter-btn">Commodities</button>
-  <button class="filter-btn">Earnings</button>
-  <button class="filter-btn">Crypto</button>
-  <button class="filter-btn">M&amp;A</button>
+  <button class="filter-btn" onclick="setFilter('geopolitical', this)">Geopolitical</button>
+  <button class="filter-btn" onclick="setFilter('macro', this)">Macro / Fed</button>
+  <button class="filter-btn" onclick="setFilter('commodities', this)">Commodities</button>
+  <button class="filter-btn" onclick="setFilter('earnings', this)">Earnings</button>
+  <button class="filter-btn" onclick="setFilter('crypto', this)">Crypto</button>
+  <button class="filter-btn" onclick="setFilter('merger', this)">M&amp;A</button>
 </div>
 
 <div class="layout">
