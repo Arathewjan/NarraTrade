@@ -353,11 +353,12 @@ header { position:sticky; top:0; z-index:200; background:rgba(8,10,13,0.97); bac
       <span class="last-fetch" id="lastFetch"></span><span class="story-count" id="storyCount"></span>
     </div>
 
-    <div class="persona-notice options">
+    <div id="personaNoticeWrap"><div class="persona-notice options">
       <span>⚡</span>
       <span>Showing stories matched to your <strong>Options Trader</strong> &amp; <strong>Day Trader</strong> personas. Stories outside your profile are hidden.</span>
-    </div>
+    </div></div>
 
+    <div id="feedContainer">
     <!-- ══ CARD 1: GEOPOLITICAL — OPTIONS + DAY ══ -->
     <div class="news-card bearish" style="animation-delay:0s">
       <div class="card-stripe"></div>
@@ -611,6 +612,7 @@ header { position:sticky; top:0; z-index:200; background:rgba(8,10,13,0.97); bac
         </div>
       </div>
     </div>
+    </div>
 
   </div>
 
@@ -649,61 +651,6 @@ header { position:sticky; top:0; z-index:200; background:rgba(8,10,13,0.97); bac
     </div>
     <div class="disclaimer">⚠ Trade ideas are AI-generated. Not financial advice.</div>
   </div>
-</div
-</head>
-<body>
-
-</div>
-
-<header>
-  <div class="masthead">
-    <div style="display:flex;align-items:center;gap:12px">
-      <div class="logo-mark">C</div>
-      <div>
-        <div class="masthead-title">Narra<em>Trade</em></div>
-        <div class="masthead-sub">Live Wire · Finnhub + AI Trade Briefs</div>
-      </div>
-    </div>
-  </div>
-  <div class="header-right">
-    <span class="source-badge">FINNHUB WIRE</span>
-    <div class="live-pill" id="livePill" onclick="loadFeed()">
-      <div class="live-dot"></div><span id="pillLabel">LOADING...</span>
-    </div>
-    <div class="header-clock" id="clock"></div>
-    <a href="journal.html" style="font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:1.5px;color:var(--muted);text-decoration:none;padding:5px 12px;border-radius:20px;border:1px solid var(--border2);transition:all .15s" onmouseover="this.style.color='var(--gold)';this.style.borderColor='var(--gold-border)'" onmouseout="this.style.color='var(--muted)';this.style.borderColor='var(--border2)'">📓 JOURNAL</a>
-    <span id="userLabel" style="font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--muted)"></span>
-  </div>
-</header>
-
-<div class="refresh-track"><div class="refresh-fill" id="refreshFill" style="width:100%"></div></div>
-
-<div class="persona-bar" id="personaBar">
-  <div class="persona-bar-label">YOUR PERSONAS</div>
-  <div id="personaPills" style="display:flex;align-items:center;gap:8px;flex:1"></div>
-  <button class="persona-bar-edit" onclick="window.location.href='onboarding.html'">✎ EDIT PERSONAS</button>
-</div>
-
-<div class="signal-legend">
-  <div class="legend-label">SIGNAL KEY</div>
-  <div class="legend-item bull"><div class="legend-swatch sw-bull"></div>BULLISH <span class="legend-desc">— Buy / Long</span></div>
-  <div class="legend-item bear"><div class="legend-swatch sw-bear"></div>BEARISH <span class="legend-desc">— Sell / Short</span></div>
-  <div class="legend-item neut"><div class="legend-swatch sw-neut"></div>MIXED <span class="legend-desc">— Conflicting signals</span></div>
-</div>
-
-<div class="filter-bar">
-  <button class="filter-btn active">All</button>
-  <div class="filter-sep"></div>
-  <button class="filter-btn">▼ Bearish</button>
-  <button class="filter-btn">▲ Bullish</button>
-  <button class="filter-btn">◆ Mixed</button>
-  <div class="filter-sep"></div>
-  <button class="filter-btn">Geopolitical</button>
-  <button class="filter-btn">Macro / Fed</button>
-  <button class="filter-btn">Commodities</button>
-  <button class="filter-btn">Earnings</button>
-  <button class="filter-btn">Crypto</button>
-  <button class="filter-btn">M&amp;A</button>
 </div>
 
 <script>
@@ -786,7 +733,7 @@ async function loadFeed(){
   setPill('loading','FETCHING WIRE...');
   fc(`<div class="feed-loading"><div class="big-spin"></div><p>PULLING NARRATRADE LIVE WIRE...</p><small>Reuters · Dow Jones · MarketWatch</small></div>`);
   try{
-    const nr=await fetch('/api/news');
+    const nr=await fetch('/api/news?_='+Date.now());
     if(!nr.ok)throw new Error('News HTTP '+nr.status);
     const raw=await nr.json();
     if(!raw.length)throw new Error('No stories');
