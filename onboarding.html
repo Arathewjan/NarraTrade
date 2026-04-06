@@ -317,27 +317,24 @@ const PERSONA_META = {
 };
 
 // Handle Supabase email confirmation redirect (contains #access_token in URL)
-(async () => {
-  const hash = window.location.hash;
-  if (hash && hash.includes('access_token')) {
-    // User just confirmed email - exchange token for session
-    const { data, error } = await sb.auth.getSession();
-    if (data?.session) {
-      // Check if they have personas already
+// onAuthStateChange fires once the client has exchanged the hash tokens for a session
+if (window.location.hash && window.location.hash.includes('access_token')) {
+  const { data: { subscription } } = sb.auth.onAuthStateChange(async (event, session) => {
+    if (event === 'SIGNED_IN' && session) {
+      subscription.unsubscribe();
       const { data: profile } = await sb.from('profiles')
-        .select('personas').eq('id', data.session.user.id).single();
+        .select('personas').eq('id', session.user.id).single();
       if (profile?.personas?.length) {
         localStorage.setItem('narratrade-personas', JSON.stringify(profile.personas));
         window.location.href = 'index.html';
         return;
       }
-      currentUser = data.session.user;
-      window.location.hash = ''; // clean the URL
+      currentUser = session.user;
+      window.location.hash = '';
       goStep(2);
-      return;
     }
-  }
-})();
+  });
+}
 
 // Check session on load — redirect if already fully set up
 (async () => {
