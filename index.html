@@ -26,8 +26,8 @@
   --investor-c:#c8a96e;--investor-bg:rgba(200,169,110,0.08);--investor-b:rgba(200,169,110,0.22);
   --font-d:'Syne',sans-serif;--font-m:'DM Mono',monospace;--font-s:'Instrument Serif',serif;
 }
-html,body{height:100%;overflow:hidden}
-body{background:var(--bg);color:var(--text);font-family:var(--font-d);font-size:13px;-webkit-font-smoothing:antialiased;display:flex;flex-direction:column}
+html{height:100%}
+body{height:100%;margin:0;background:var(--bg);color:var(--text);font-family:var(--font-d);font-size:13px;-webkit-font-smoothing:antialiased;display:flex;flex-direction:column;overflow:hidden}
 
 /* ── APP NAV ── */
 .app-nav{
@@ -56,10 +56,11 @@ body{background:var(--bg);color:var(--text);font-family:var(--font-d);font-size:
 .refresh-fill{height:100%;background:linear-gradient(90deg,var(--accent2),var(--accent));transition:width 1s linear}
 
 /* DASHBOARD LAYOUT */
-.dash-layout{flex:1;display:grid;grid-template-columns:216px 1fr;overflow:hidden;min-height:0}
+.dash-layout{flex:1;display:grid;grid-template-columns:216px 1fr;overflow:hidden;min-height:0;height:0}
 
 /* SIDEBAR */
-.dash-sidebar{background:var(--surface);border-right:1px solid var(--border);padding:22px 14px;display:flex;flex-direction:column;gap:2px;overflow-y:auto}
+.dash-sidebar{background:var(--surface);border-right:1px solid var(--border);padding:22px 14px;display:flex;flex-direction:column;gap:2px;overflow-y:auto;min-height:0}
+.pages-wrapper{overflow-y:auto;height:100%;}
 .sidebar-section{margin-bottom:22px}
 .sidebar-label{font-size:10px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:var(--muted2);font-family:var(--font-m);padding:0 10px;margin-bottom:6px}
 .sidebar-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:8px;cursor:pointer;transition:all 0.15s;color:var(--muted);font-size:13px;font-weight:500;border:none;background:none;width:100%;text-align:left;font-family:var(--font-d)}
@@ -418,7 +419,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--font-d);font-size:
   </aside>
 
   <!-- PAGES -->
-  <div style="overflow-y:auto;flex:1;min-height:0;">
+  <div class="pages-wrapper">
 
     <!-- ── OVERVIEW ── -->
     <div class="dash-page active" id="page-overview">
@@ -458,55 +459,18 @@ body{background:var(--bg);color:var(--text);font-family:var(--font-d);font-size:
           </div>
         </div>
 
-        <div class="chart-row">
-          <div class="chart-card">
-            <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px">
-              <div><div class="chart-title">Portfolio Performance</div><div class="chart-sub">vs SPY benchmark · YTD</div></div>
-              <div class="chart-tabs">
-                <button class="chart-tab" onclick="ctab(this)">1D</button>
-                <button class="chart-tab" onclick="ctab(this)">1W</button>
-                <button class="chart-tab active" onclick="ctab(this)">1M</button>
-                <button class="chart-tab" onclick="ctab(this)">YTD</button>
-              </div>
+          <div class="chart-row">
+            <div class="chart-card">
+              <div class="chart-title">Market Pulse</div>
+              <div class="chart-sub">Live prices · Yahoo Finance</div>
+              <div id="mktPulseOverview"><div style="color:var(--muted);font-size:10px;font-family:var(--font-m)">Loading...</div></div>
             </div>
-            <svg width="100%" height="140" viewBox="0 0 560 140" preserveAspectRatio="none">
-              <defs><linearGradient id="ga" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#00e5a0" stop-opacity="0.22"/><stop offset="100%" stop-color="#00e5a0" stop-opacity="0"/></linearGradient></defs>
-              <path d="M0,108 C60,96 120,84 180,78 C240,72 300,64 360,52 C420,40 480,28 560,14 L560,140 L0,140 Z" fill="url(#ga)"/>
-              <path d="M0,108 C60,96 120,84 180,78 C240,72 300,64 360,52 C420,40 480,28 560,14" fill="none" stroke="#00e5a0" stroke-width="2"/>
-              <path d="M0,112 C60,106 120,102 180,98 C240,94 300,90 360,87 C420,84 480,80 560,76" fill="none" stroke="#0095ff" stroke-width="1.5" opacity="0.45"/>
-              <circle cx="560" cy="14" r="4" fill="#00e5a0"/>
-              <line x1="0" y1="46" x2="560" y2="46" stroke="rgba(255,255,255,0.04)" stroke-width="1"/>
-              <line x1="0" y1="93" x2="560" y2="93" stroke="rgba(255,255,255,0.04)" stroke-width="1"/>
-              <text x="3" y="44" fill="#3d4d66" font-size="9" font-family="DM Mono">+20%</text>
-              <text x="3" y="91" fill="#3d4d66" font-size="9" font-family="DM Mono">+10%</text>
-            </svg>
-            <div style="display:flex;gap:18px;margin-top:8px">
-              <div style="display:flex;align-items:center;gap:6px;font-size:11px;font-family:var(--font-m)"><div style="width:10px;height:2px;background:var(--accent);border-radius:1px"></div>Portfolio</div>
-              <div style="display:flex;align-items:center;gap:6px;font-size:11px;font-family:var(--font-m);color:var(--muted)"><div style="width:10px;height:2px;background:var(--accent2);border-radius:1px;opacity:0.6"></div>SPY</div>
+            <div class="chart-card">
+              <div class="chart-title">Sector Snapshot</div>
+              <div class="chart-sub">Live sector performance</div>
+              <div id="sectorOverview"><div style="color:var(--muted);font-size:10px;font-family:var(--font-m)">Loading...</div></div>
             </div>
           </div>
-          <div class="chart-card">
-            <div class="chart-title">Allocation</div>
-            <div class="chart-sub">By sector</div>
-            <div class="donut-wrap">
-              <svg width="120" height="120" viewBox="0 0 120 120">
-                <circle cx="60" cy="60" r="44" fill="none" stroke="#111927" stroke-width="16"/>
-                <circle cx="60" cy="60" r="44" fill="none" stroke="#00e5a0" stroke-width="16" stroke-dasharray="110.6 165.9" stroke-dashoffset="41" transform="rotate(-90 60 60)"/>
-                <circle cx="60" cy="60" r="44" fill="none" stroke="#0095ff" stroke-width="16" stroke-dasharray="69.1 207.3" stroke-dashoffset="-69.6" transform="rotate(-90 60 60)"/>
-                <circle cx="60" cy="60" r="44" fill="none" stroke="#7b5ea7" stroke-width="16" stroke-dasharray="55.3 221.1" stroke-dashoffset="-138.7" transform="rotate(-90 60 60)"/>
-                <circle cx="60" cy="60" r="44" fill="none" stroke="#f5c842" stroke-width="16" stroke-dasharray="41.5 234.9" stroke-dashoffset="-194" transform="rotate(-90 60 60)"/>
-                <text x="60" y="56" text-anchor="middle" fill="#e8edf5" font-size="14" font-weight="800" font-family="Syne">40%</text>
-                <text x="60" y="70" text-anchor="middle" fill="#6b7a96" font-size="8" font-family="DM Mono">TECH</text>
-              </svg>
-              <div class="donut-legend">
-                <div class="donut-item"><div class="donut-name"><div class="donut-dot" style="background:var(--accent)"></div>Technology</div><div class="donut-pct" style="color:var(--accent)">40%</div></div>
-                <div class="donut-item"><div class="donut-name"><div class="donut-dot" style="background:var(--accent2)"></div>Financials</div><div class="donut-pct" style="color:var(--accent2)">25%</div></div>
-                <div class="donut-item"><div class="donut-name"><div class="donut-dot" style="background:var(--accent3)"></div>Energy</div><div class="donut-pct" style="color:var(--accent3)">20%</div></div>
-                <div class="donut-item"><div class="donut-name"><div class="donut-dot" style="background:var(--gold)"></div>Other</div><div class="donut-pct" style="color:var(--gold)">15%</div></div>
-              </div>
-            </div>
-          </div>
-        </div>
 
         <div class="bottom-row">
           <div class="panel-card">
@@ -689,6 +653,7 @@ let stories=[],filter='all',personas=[],refreshTimer,countdown=300,user=null;
   loadFeed();
   setInterval(loadSidebar,120000);
   updateKPIs();
+  loadOverviewPanels();
 })();
 
 // ── CLOCK ──────────────────────────────
@@ -951,6 +916,41 @@ function renderTopPlays(){
 }
 
 async function loadSidebar(){loadFG();loadMkt();loadSectors();}
+
+// ── OVERVIEW PANELS (Market Pulse + Sector in Overview tab) ──
+async function loadOverviewPanels(){
+  // Market Pulse in Overview
+  const idx=[{sym:'SPY',label:'S&P 500'},{sym:'QQQ',label:'Nasdaq 100'},{sym:'GLD',label:'Gold'},{sym:'TLT',label:'20Y Treasury'},{sym:'USO',label:'Crude Oil'},{sym:'BTC-USD',label:'Bitcoin'}];
+  const mp=document.getElementById('mktPulseOverview');
+  if(mp)mp.innerHTML=idx.map(i=>`<div class="pulse-row"><div class="pulse-name">${i.label}</div><div style="text-align:right"><div class="pulse-price" id="opv-${i.sym}">—</div><div class="pulse-chg" id="opc-${i.sym}">—</div></div></div>`).join('');
+  for(const i of idx){
+    try{
+      const r=await fetch(`https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(i.sym)}?interval=1m&range=1d`);
+      const meta=(await r.json())?.chart?.result?.[0]?.meta;if(!meta)continue;
+      const price=meta.regularMarketPrice,prev=meta.chartPreviousClose,chg=prev?(price-prev)/prev*100:0;
+      const pv=document.getElementById('opv-'+i.sym),pc=document.getElementById('opc-'+i.sym);
+      if(pv)pv.textContent=i.sym==='BTC-USD'?'$'+price.toLocaleString('en-US',{maximumFractionDigits:0}):'$'+price.toFixed(2);
+      if(pc){pc.textContent=(chg>=0?'+':'')+chg.toFixed(2)+'%';pc.className='pulse-chg '+(chg>=0?'up':'down');}
+    }catch{}
+  }
+  // Sector snapshot in Overview
+  const sec=[{sym:'XLK',label:'Technology'},{sym:'XLF',label:'Financials'},{sym:'XLE',label:'Energy'},{sym:'XLV',label:'Healthcare'},{sym:'XLI',label:'Industrials'},{sym:'XLP',label:'Cons. Staples'},{sym:'XLY',label:'Cons. Disc.'},{sym:'XLRE',label:'Real Estate'}];
+  const results=[];
+  for(const s of sec){
+    try{
+      const r=await fetch(`https://query1.finance.yahoo.com/v8/finance/chart/${s.sym}?interval=1m&range=1d`);
+      const meta=(await r.json())?.chart?.result?.[0]?.meta;
+      const chg=meta?.chartPreviousClose?(meta.regularMarketPrice-meta.chartPreviousClose)/meta.chartPreviousClose*100:0;
+      results.push({label:s.label,chg});
+    }catch{results.push({label:s.label,chg:0});}
+  }
+  const mx=Math.max(...results.map(r=>Math.abs(r.chg)),0.01);
+  const so=document.getElementById('sectorOverview');
+  if(so)so.innerHTML=results.map(r=>{
+    const c=r.chg>=0?'var(--bull)':'var(--bear)';
+    return`<div class="sector-row"><div class="sector-name">${r.label}</div><div class="sector-bar-wrap"><div class="sector-bar-fill" style="width:${Math.abs(r.chg)/mx*100}%;background:${c}"></div></div><div class="sector-pct" style="color:${c}">${r.chg>=0?'+':''}${r.chg.toFixed(2)}%</div></div>`;
+  }).join('');
+}
 
 async function loadFG(){
   try{
