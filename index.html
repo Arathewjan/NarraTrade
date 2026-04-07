@@ -26,23 +26,19 @@
   --investor-c:#c8a96e;--investor-bg:rgba(200,169,110,0.08);--investor-b:rgba(200,169,110,0.22);
   --font-d:'Syne',sans-serif;--font-m:'DM Mono',monospace;--font-s:'Instrument Serif',serif;
 }
-html{scroll-behavior:smooth}
-body{background:var(--bg);color:var(--text);font-family:var(--font-d);font-size:13px;min-height:100vh;-webkit-font-smoothing:antialiased}
+html,body{height:100%;overflow:hidden}
+body{background:var(--bg);color:var(--text);font-family:var(--font-d);font-size:13px;-webkit-font-smoothing:antialiased;display:flex;flex-direction:column}
 
 /* ── APP NAV ── */
 .app-nav{
-  position:sticky;top:0;z-index:200;
+  flex-shrink:0;
   display:flex;align-items:center;justify-content:space-between;
-  padding:0 32px;height:62px;
-  background:rgba(8,12,20,0.94);backdrop-filter:blur(20px);
+  padding:0 24px;height:62px;
+  background:rgba(8,12,20,0.97);
   border-bottom:1px solid var(--border);box-shadow:0 1px 24px rgba(0,0,0,0.5)
 }
 .nav-logo{font-size:18px;font-weight:800;letter-spacing:-0.5px;cursor:pointer}
 .nav-logo span{color:var(--accent)}
-.app-nav-center{display:flex;gap:4px;background:var(--surface);border-radius:10px;padding:4px;border:1px solid var(--border)}
-.app-tab{padding:8px 20px;border-radius:7px;font-size:13px;font-weight:600;cursor:pointer;transition:all 0.2s;color:var(--muted);border:none;background:none;font-family:var(--font-d)}
-.app-tab.active{background:var(--accent);color:#000}
-.app-tab:hover:not(.active){color:var(--text);background:var(--surface2)}
 .app-right{display:flex;gap:10px;align-items:center}
 .app-avatar{width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,var(--accent3),var(--accent2));display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;cursor:pointer}
 .app-badge{background:var(--red);color:#fff;font-size:10px;font-weight:700;border-radius:20px;padding:2px 8px}
@@ -56,14 +52,14 @@ body{background:var(--bg);color:var(--text);font-family:var(--font-d);font-size:
 .nav-journal-link:hover{color:var(--accent);border-color:rgba(0,229,160,0.3)}
 
 /* REFRESH BAR */
-.refresh-track{height:2px;background:var(--border);overflow:hidden}
+.refresh-track{height:2px;background:var(--border);overflow:hidden;flex-shrink:0}
 .refresh-fill{height:100%;background:linear-gradient(90deg,var(--accent2),var(--accent));transition:width 1s linear}
 
 /* DASHBOARD LAYOUT */
-.dash-layout{display:grid;grid-template-columns:216px 1fr;min-height:calc(100vh - 64px)}
+.dash-layout{flex:1;display:grid;grid-template-columns:216px 1fr;overflow:hidden;min-height:0}
 
 /* SIDEBAR */
-.dash-sidebar{background:var(--surface);border-right:1px solid var(--border);padding:22px 14px;display:flex;flex-direction:column;gap:2px}
+.dash-sidebar{background:var(--surface);border-right:1px solid var(--border);padding:22px 14px;display:flex;flex-direction:column;gap:2px;overflow-y:auto}
 .sidebar-section{margin-bottom:22px}
 .sidebar-label{font-size:10px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:var(--muted2);font-family:var(--font-m);padding:0 10px;margin-bottom:6px}
 .sidebar-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:8px;cursor:pointer;transition:all 0.15s;color:var(--muted);font-size:13px;font-weight:500;border:none;background:none;width:100%;text-align:left;font-family:var(--font-d)}
@@ -370,11 +366,6 @@ body{background:var(--bg);color:var(--text);font-family:var(--font-d);font-size:
 <!-- APP NAV -->
 <nav class="app-nav">
   <div class="nav-logo" onclick="window.location.href='onboarding.html'">NARRA<span>.</span>TRADE</div>
-  <div class="app-nav-center">
-    <button class="app-tab active" id="tabOverview" onclick="showPage('overview')">Overview</button>
-    <button class="app-tab" id="tabSignals" onclick="showPage('signals')">Signals</button>
-    <button class="app-tab" id="tabFeed" onclick="showPage('feed')">Live Feed</button>
-  </div>
   <div class="app-right">
     <div class="live-pill" id="livePill" onclick="loadFeed()">
       <div class="live-dot"></div><span id="pillLabel">LOADING...</span>
@@ -394,14 +385,14 @@ body{background:var(--bg);color:var(--text);font-family:var(--font-d);font-size:
   <aside class="dash-sidebar">
     <div class="sidebar-section">
       <div class="sidebar-label">Views</div>
-      <button class="sidebar-item active" id="si-overview" onclick="showPage('overview')">
+      <button class="sidebar-item active" id="si-overview" onclick="showPage('overview',null,this)">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>Overview
       </button>
-      <button class="sidebar-item" id="si-signals" onclick="showPage('signals')">
+      <button class="sidebar-item" id="si-signals" onclick="showPage('signals',null,this)">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22,12 18,12 15,21 9,3 6,12 2,12"/></svg>Signals
         <span class="sbadge">3</span>
       </button>
-      <button class="sidebar-item" id="si-feed" onclick="showPage('feed')">
+      <button class="sidebar-item" id="si-feed" onclick="showPage('feed',null,this)">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>Live Feed
       </button>
       <a class="sidebar-item" href="journal.html" style="text-decoration:none">
@@ -427,7 +418,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--font-d);font-size:
   </aside>
 
   <!-- PAGES -->
-  <div style="overflow-y:auto;height:calc(100vh - 64px);position:relative">
+  <div style="overflow-y:auto;flex:1;min-height:0;">
 
     <!-- ── OVERVIEW ── -->
     <div class="dash-page active" id="page-overview">
@@ -708,19 +699,12 @@ setInterval(()=>{
 
 // ── PAGE SWITCHING ─────────────────────
 function showPage(id){
-  // Hide all pages
   document.querySelectorAll('.dash-page').forEach(p=>p.classList.remove('active'));
-  // Show target page
   const page=document.getElementById('page-'+id);
   if(page)page.classList.add('active');
-  // Update top nav tabs
-  document.querySelectorAll('.app-tab').forEach(t=>t.classList.remove('active'));
-  const tabMap={overview:'tabOverview',signals:'tabSignals',feed:'tabFeed'};
-  if(tabMap[id])document.getElementById(tabMap[id])?.classList.add('active');
-  // Update sidebar items
   document.querySelectorAll('.sidebar-item').forEach(s=>s.classList.remove('active'));
-  const sideMap={overview:'si-overview',signals:'si-signals',feed:'si-feed'};
-  if(sideMap[id])document.getElementById(sideMap[id])?.classList.add('active');
+  const sideEl=document.getElementById('si-'+id);
+  if(sideEl)sideEl.classList.add('active');
 }
 function ctab(btn){btn.closest('.chart-tabs').querySelectorAll('.chart-tab').forEach(t=>t.classList.remove('active'));btn.classList.add('active');}
 function filterSig(el){document.querySelectorAll('.sig-filter').forEach(f=>f.classList.remove('active'));el.classList.add('active');}
