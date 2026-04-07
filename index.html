@@ -26,8 +26,8 @@
   --investor-c:#c8a96e;--investor-bg:rgba(200,169,110,0.08);--investor-b:rgba(200,169,110,0.22);
   --font-d:'Syne',sans-serif;--font-m:'DM Mono',monospace;--font-s:'Instrument Serif',serif;
 }
-html{height:100%}
-body{height:100%;margin:0;background:var(--bg);color:var(--text);font-family:var(--font-d);font-size:13px;-webkit-font-smoothing:antialiased;display:flex;flex-direction:column;overflow:hidden}
+html,body{margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:var(--font-d);font-size:13px;-webkit-font-smoothing:antialiased}
 
 /* ── APP NAV ── */
 .app-nav{
@@ -52,15 +52,15 @@ body{height:100%;margin:0;background:var(--bg);color:var(--text);font-family:var
 .nav-journal-link:hover{color:var(--accent);border-color:rgba(0,229,160,0.3)}
 
 /* REFRESH BAR */
-.refresh-track{height:2px;background:var(--border);overflow:hidden;flex-shrink:0}
+.refresh-track{height:2px;background:var(--border);overflow:hidden}
 .refresh-fill{height:100%;background:linear-gradient(90deg,var(--accent2),var(--accent));transition:width 1s linear}
 
 /* DASHBOARD LAYOUT */
-.dash-layout{flex:1;display:grid;grid-template-columns:216px 1fr;overflow:hidden;min-height:0;height:0}
+.dash-layout{display:grid;grid-template-columns:216px 1fr;min-height:calc(100vh - 64px)}
 
 /* SIDEBAR */
-.dash-sidebar{background:var(--surface);border-right:1px solid var(--border);padding:22px 14px;display:flex;flex-direction:column;gap:2px;overflow-y:auto;min-height:0}
-.pages-wrapper{overflow-y:auto;height:100%;}
+.dash-sidebar{background:var(--surface);border-right:1px solid var(--border);padding:22px 14px;display:flex;flex-direction:column;gap:2px;position:sticky;top:64px;height:calc(100vh - 64px);overflow-y:auto}
+.pages-wrapper{min-width:0}
 .sidebar-section{margin-bottom:22px}
 .sidebar-label{font-size:10px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:var(--muted2);font-family:var(--font-m);padding:0 10px;margin-bottom:6px}
 .sidebar-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:8px;cursor:pointer;transition:all 0.15s;color:var(--muted);font-size:13px;font-weight:500;border:none;background:none;width:100%;text-align:left;font-family:var(--font-d)}
@@ -461,14 +461,24 @@ body{height:100%;margin:0;background:var(--bg);color:var(--text);font-family:var
 
           <div class="chart-row">
             <div class="chart-card">
-              <div class="chart-title">Market Pulse</div>
-              <div class="chart-sub">Live prices · Yahoo Finance</div>
-              <div id="mktPulseOverview"><div style="color:var(--muted);font-size:10px;font-family:var(--font-m)">Loading...</div></div>
+              <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px">
+                <div>
+                  <div class="chart-title">Portfolio Simulation</div>
+                  <div class="chart-sub">Based on your logged trades · resets on each new trade</div>
+                </div>
+                <button onclick="resetPortfolio()" style="font-family:var(--font-m);font-size:8px;letter-spacing:1px;padding:4px 12px;border-radius:20px;border:1px solid var(--border2);background:none;color:var(--muted);cursor:pointer;transition:all 0.2s" onmouseover="this.style.borderColor='rgba(255,77,109,0.4)';this.style.color='var(--red)'" onmouseout="this.style.borderColor='var(--border2)';this.style.color='var(--muted)'">↺ RESET</button>
+              </div>
+              <canvas id="portfolioChart" height="140" style="width:100%;display:block"></canvas>
+              <div style="display:flex;gap:24px;margin-top:10px;align-items:center">
+                <div style="font-family:var(--font-m);font-size:11px;color:var(--muted)">Starting balance: <span id="simStart" style="color:var(--text)">$—</span></div>
+                <div style="font-family:var(--font-m);font-size:11px;color:var(--muted)">Simulated P&amp;L: <span id="simPnl" style="color:var(--accent)">$—</span></div>
+                <div style="font-family:var(--font-m);font-size:11px;color:var(--muted)">Trades: <span id="simTrades" style="color:var(--text)">0</span></div>
+              </div>
             </div>
             <div class="chart-card">
-              <div class="chart-title">Sector Snapshot</div>
-              <div class="chart-sub">Live sector performance</div>
-              <div id="sectorOverview"><div style="color:var(--muted);font-size:10px;font-family:var(--font-m)">Loading...</div></div>
+              <div class="chart-title">Trade Breakdown</div>
+              <div class="chart-sub">From your journal</div>
+              <div id="tradeBreakdown"><div style="color:var(--muted);font-size:11px;font-family:var(--font-m)">No trades logged yet.</div></div>
             </div>
           </div>
 
@@ -653,7 +663,7 @@ let stories=[],filter='all',personas=[],refreshTimer,countdown=300,user=null;
   loadFeed();
   setInterval(loadSidebar,120000);
   updateKPIs();
-  loadOverviewPanels();
+
 })();
 
 // ── CLOCK ──────────────────────────────
@@ -693,10 +703,144 @@ function matchedFor(s){return personas.filter(p=>(PC[p]||[]).includes(s.category
 // ── KPIs ───────────────────────────────
 function updateKPIs(){
   const trades=JSON.parse(localStorage.getItem('narratrade-trades')||'[]');
+  const bal=parseFloat(localStorage.getItem('narratrade-balance')||'0');
+
+  // KPI: trade count
   document.getElementById('kpiTrades').textContent=trades.length+' trades';
-  const bal=localStorage.getItem('narratrade-balance');
-  if(bal)document.getElementById('kpiBalance').textContent='$'+parseFloat(bal).toLocaleString('en-US',{maximumFractionDigits:0});
+
+  // KPI: portfolio value (balance)
+  if(bal>0)document.getElementById('kpiBalance').textContent='$'+bal.toLocaleString('en-US',{maximumFractionDigits:0});
+
+  // KPI: stories
   document.getElementById('kpiStories').textContent=stories.length||'—';
+
+  // Portfolio simulation
+  renderPortfolioSim(trades, bal);
+
+  // Trade breakdown
+  renderTradeBreakdown(trades);
+}
+
+function renderPortfolioSim(trades, startingBalance){
+  const canvas=document.getElementById('portfolioChart');
+  if(!canvas)return;
+  const ctx=canvas.getContext('2d');
+  canvas.width=canvas.offsetWidth*window.devicePixelRatio||600;
+  canvas.height=140*window.devicePixelRatio||140;
+  ctx.scale(window.devicePixelRatio||1,window.devicePixelRatio||1);
+  const W=canvas.offsetWidth||600,H=140;
+
+  // Build equity curve from trades
+  // Each trade: entry premium * qty * 100 = cost. Simulate random outcome between SL and TP.
+  const base=startingBalance||10000;
+  let simStart=parseFloat(localStorage.getItem('narratrade-sim-start')||base);
+  document.getElementById('simStart').textContent='$'+simStart.toLocaleString('en-US',{maximumFractionDigits:0});
+  document.getElementById('simTrades').textContent=trades.length;
+
+  // Build equity points: start at simStart, each trade moves it
+  const points=[simStart];
+  let running=simStart;
+  [...trades].reverse().forEach(t=>{
+    const entry=parseFloat((t.entry||'').replace(/[$,]/g,''))||0;
+    const tp=parseFloat((t.tp||'').replace(/[$,]/g,''))||0;
+    const sl=parseFloat((t.sl||'').replace(/[$,]/g,''))||0;
+    const qty=parseInt(t.qty)||1;
+    if(!entry)return;
+    // Simulate: weight toward TP 55% of time (slight edge)
+    const win=Math.random()<0.55;
+    const pnl=win?(tp-entry)*qty*100:(sl-entry)*qty*100;
+    running+=pnl;
+    points.push(Math.max(running,0));
+  });
+
+  if(points.length<2){
+    // No trades — draw flat line
+    ctx.clearRect(0,0,W,H);
+    ctx.strokeStyle='rgba(0,229,160,0.3)';ctx.lineWidth=1.5;ctx.setLineDash([4,4]);
+    ctx.beginPath();ctx.moveTo(0,H/2);ctx.lineTo(W,H/2);ctx.stroke();
+    document.getElementById('simPnl').textContent='$0';
+    document.getElementById('simPnl').style.color='var(--muted)';
+    return;
+  }
+
+  const minV=Math.min(...points),maxV=Math.max(...points);
+  const range=maxV-minV||1;
+  const pad=16;
+  const xStep=(W-pad*2)/(points.length-1);
+  const yPos=v=>pad+(1-(v-minV)/range)*(H-pad*2);
+  const pts=points.map((v,i)=>({x:pad+i*xStep,y:yPos(v)}));
+
+  ctx.clearRect(0,0,W,H);
+
+  // Gradient fill
+  const grad=ctx.createLinearGradient(0,0,0,H);
+  const finalUp=points[points.length-1]>=points[0];
+  if(finalUp){grad.addColorStop(0,'rgba(0,229,160,0.2)');grad.addColorStop(1,'rgba(0,229,160,0)');}
+  else{grad.addColorStop(0,'rgba(255,77,109,0.15)');grad.addColorStop(1,'rgba(255,77,109,0)');}
+  ctx.beginPath();
+  ctx.moveTo(pts[0].x,pts[0].y);
+  pts.slice(1).forEach(p=>ctx.lineTo(p.x,p.y));
+  ctx.lineTo(pts[pts.length-1].x,H);ctx.lineTo(pts[0].x,H);ctx.closePath();
+  ctx.fillStyle=grad;ctx.fill();
+
+  // Line
+  ctx.beginPath();ctx.moveTo(pts[0].x,pts[0].y);
+  pts.slice(1).forEach(p=>ctx.lineTo(p.x,p.y));
+  ctx.strokeStyle=finalUp?'#00e5a0':'#ff4d6d';ctx.lineWidth=2;ctx.setLineDash([]);ctx.stroke();
+
+  // Dots at each trade
+  pts.forEach((p,i)=>{
+    ctx.beginPath();ctx.arc(p.x,p.y,3,0,Math.PI*2);
+    ctx.fillStyle=finalUp?'#00e5a0':'#ff4d6d';ctx.fill();
+  });
+
+  // P&L display
+  const pnl=running-simStart;
+  const pnlEl=document.getElementById('simPnl');
+  pnlEl.textContent=(pnl>=0?'+$':'-$')+Math.abs(pnl).toLocaleString('en-US',{maximumFractionDigits:0});
+  pnlEl.style.color=pnl>=0?'var(--accent)':'var(--red)';
+}
+
+function resetPortfolio(){
+  const bal=parseFloat(localStorage.getItem('narratrade-balance')||'0')||10000;
+  localStorage.setItem('narratrade-sim-start',bal);
+  updateKPIs();
+}
+
+function renderTradeBreakdown(trades){
+  const el=document.getElementById('tradeBreakdown');if(!el)return;
+  if(!trades.length){el.innerHTML='<div style="color:var(--muted);font-size:11px;font-family:var(--font-m)">No trades logged yet.<br><br>Go to Live Feed → tap any options line → fill in your trade → Save to Journal.</div>';return;}
+  const calls=trades.filter(t=>t.type==='CALL').length;
+  const puts=trades.filter(t=>t.type==='PUT').length;
+  const tickers=[...new Set(trades.map(t=>t.ticker).filter(Boolean))].slice(0,5);
+  const totalContracts=trades.reduce((s,t)=>s+(parseInt(t.qty)||0),0);
+  el.innerHTML=`
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px">
+      <div style="background:var(--surface2);border-radius:9px;padding:12px;border:1px solid var(--border)">
+        <div style="font-family:var(--font-m);font-size:9px;color:var(--muted);letter-spacing:1px;margin-bottom:6px">CALLS</div>
+        <div style="font-size:22px;font-weight:800;color:var(--accent);font-family:var(--font-m)">${calls}</div>
+      </div>
+      <div style="background:var(--surface2);border-radius:9px;padding:12px;border:1px solid var(--border)">
+        <div style="font-family:var(--font-m);font-size:9px;color:var(--muted);letter-spacing:1px;margin-bottom:6px">PUTS</div>
+        <div style="font-size:22px;font-weight:800;color:var(--red);font-family:var(--font-m)">${puts}</div>
+      </div>
+      <div style="background:var(--surface2);border-radius:9px;padding:12px;border:1px solid var(--border)">
+        <div style="font-family:var(--font-m);font-size:9px;color:var(--muted);letter-spacing:1px;margin-bottom:6px">CONTRACTS</div>
+        <div style="font-size:22px;font-weight:800;font-family:var(--font-m)">${totalContracts}</div>
+      </div>
+      <div style="background:var(--surface2);border-radius:9px;padding:12px;border:1px solid var(--border)">
+        <div style="font-family:var(--font-m);font-size:9px;color:var(--muted);letter-spacing:1px;margin-bottom:6px">TICKERS</div>
+        <div style="font-size:11px;font-weight:700;color:var(--text);font-family:var(--font-m);line-height:1.6">${tickers.join(', ')||'—'}</div>
+      </div>
+    </div>
+    ${trades.slice(0,4).map(t=>`
+      <div style="display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid var(--border)">
+        <div style="font-size:12px;font-weight:800;font-family:var(--font-m);width:44px">${esc(t.ticker||'—')}</div>
+        <div style="font-family:var(--font-m);font-size:9px;padding:2px 7px;border-radius:4px;${t.type==='CALL'?'background:rgba(0,229,160,0.1);color:var(--accent)':'background:rgba(255,77,109,0.1);color:var(--red)'}">${t.type||'—'}</div>
+        <div style="font-family:var(--font-m);font-size:10px;color:var(--muted)">${esc(t.expiry||'—')}</div>
+        <div style="font-family:var(--font-m);font-size:10px;color:var(--gold);margin-left:auto">Entry: ${esc(t.entry||'—')}</div>
+      </div>`).join('')}
+  `;
 }
 
 // ── BROKERAGE ──────────────────────────
@@ -918,39 +1062,6 @@ function renderTopPlays(){
 async function loadSidebar(){loadFG();loadMkt();loadSectors();}
 
 // ── OVERVIEW PANELS (Market Pulse + Sector in Overview tab) ──
-async function loadOverviewPanels(){
-  // Market Pulse in Overview
-  const idx=[{sym:'SPY',label:'S&P 500'},{sym:'QQQ',label:'Nasdaq 100'},{sym:'GLD',label:'Gold'},{sym:'TLT',label:'20Y Treasury'},{sym:'USO',label:'Crude Oil'},{sym:'BTC-USD',label:'Bitcoin'}];
-  const mp=document.getElementById('mktPulseOverview');
-  if(mp)mp.innerHTML=idx.map(i=>`<div class="pulse-row"><div class="pulse-name">${i.label}</div><div style="text-align:right"><div class="pulse-price" id="opv-${i.sym}">—</div><div class="pulse-chg" id="opc-${i.sym}">—</div></div></div>`).join('');
-  for(const i of idx){
-    try{
-      const r=await fetch(`https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(i.sym)}?interval=1m&range=1d`);
-      const meta=(await r.json())?.chart?.result?.[0]?.meta;if(!meta)continue;
-      const price=meta.regularMarketPrice,prev=meta.chartPreviousClose,chg=prev?(price-prev)/prev*100:0;
-      const pv=document.getElementById('opv-'+i.sym),pc=document.getElementById('opc-'+i.sym);
-      if(pv)pv.textContent=i.sym==='BTC-USD'?'$'+price.toLocaleString('en-US',{maximumFractionDigits:0}):'$'+price.toFixed(2);
-      if(pc){pc.textContent=(chg>=0?'+':'')+chg.toFixed(2)+'%';pc.className='pulse-chg '+(chg>=0?'up':'down');}
-    }catch{}
-  }
-  // Sector snapshot in Overview
-  const sec=[{sym:'XLK',label:'Technology'},{sym:'XLF',label:'Financials'},{sym:'XLE',label:'Energy'},{sym:'XLV',label:'Healthcare'},{sym:'XLI',label:'Industrials'},{sym:'XLP',label:'Cons. Staples'},{sym:'XLY',label:'Cons. Disc.'},{sym:'XLRE',label:'Real Estate'}];
-  const results=[];
-  for(const s of sec){
-    try{
-      const r=await fetch(`https://query1.finance.yahoo.com/v8/finance/chart/${s.sym}?interval=1m&range=1d`);
-      const meta=(await r.json())?.chart?.result?.[0]?.meta;
-      const chg=meta?.chartPreviousClose?(meta.regularMarketPrice-meta.chartPreviousClose)/meta.chartPreviousClose*100:0;
-      results.push({label:s.label,chg});
-    }catch{results.push({label:s.label,chg:0});}
-  }
-  const mx=Math.max(...results.map(r=>Math.abs(r.chg)),0.01);
-  const so=document.getElementById('sectorOverview');
-  if(so)so.innerHTML=results.map(r=>{
-    const c=r.chg>=0?'var(--bull)':'var(--bear)';
-    return`<div class="sector-row"><div class="sector-name">${r.label}</div><div class="sector-bar-wrap"><div class="sector-bar-fill" style="width:${Math.abs(r.chg)/mx*100}%;background:${c}"></div></div><div class="sector-pct" style="color:${c}">${r.chg>=0?'+':''}${r.chg.toFixed(2)}%</div></div>`;
-  }).join('');
-}
 
 async function loadFG(){
   try{
