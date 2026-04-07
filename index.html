@@ -92,7 +92,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--font-d);font-size:
 .watch-chg.up{color:var(--bull)}.watch-chg.dn{color:var(--red)}
 
 /* PAGES */
-.dash-page{display:none;overflow-y:auto;height:calc(100vh - 64px)}
+.dash-page{display:none}
 .dash-page.active{display:block}
 
 /* ── OVERVIEW PAGE ── */
@@ -371,9 +371,9 @@ body{background:var(--bg);color:var(--text);font-family:var(--font-d);font-size:
 <nav class="app-nav">
   <div class="nav-logo" onclick="window.location.href='onboarding.html'">NARRA<span>.</span>TRADE</div>
   <div class="app-nav-center">
-    <button class="app-tab active" id="tabOverview" onclick="showPage('overview',this)">Overview</button>
-    <button class="app-tab" id="tabSignals" onclick="showPage('signals',this)">Signals</button>
-    <button class="app-tab" id="tabFeed" onclick="showPage('feed',this)">Live Feed</button>
+    <button class="app-tab active" id="tabOverview" onclick="showPage('overview')">Overview</button>
+    <button class="app-tab" id="tabSignals" onclick="showPage('signals')">Signals</button>
+    <button class="app-tab" id="tabFeed" onclick="showPage('feed')">Live Feed</button>
   </div>
   <div class="app-right">
     <div class="live-pill" id="livePill" onclick="loadFeed()">
@@ -394,14 +394,14 @@ body{background:var(--bg);color:var(--text);font-family:var(--font-d);font-size:
   <aside class="dash-sidebar">
     <div class="sidebar-section">
       <div class="sidebar-label">Views</div>
-      <button class="sidebar-item active" id="si-overview" onclick="showPage('overview',null,this)">
+      <button class="sidebar-item active" id="si-overview" onclick="showPage('overview')">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>Overview
       </button>
-      <button class="sidebar-item" id="si-signals" onclick="showPage('signals',null,this)">
+      <button class="sidebar-item" id="si-signals" onclick="showPage('signals')">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22,12 18,12 15,21 9,3 6,12 2,12"/></svg>Signals
         <span class="sbadge">3</span>
       </button>
-      <button class="sidebar-item" id="si-feed" onclick="showPage('feed',null,this)">
+      <button class="sidebar-item" id="si-feed" onclick="showPage('feed')">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>Live Feed
       </button>
       <a class="sidebar-item" href="journal.html" style="text-decoration:none">
@@ -427,7 +427,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--font-d);font-size:
   </aside>
 
   <!-- PAGES -->
-  <div style="overflow-y:auto;height:calc(100vh - 64px)">
+  <div style="overflow-y:auto;height:calc(100vh - 64px);position:relative">
 
     <!-- ── OVERVIEW ── -->
     <div class="dash-page active" id="page-overview">
@@ -707,14 +707,19 @@ setInterval(()=>{
 },1000);
 
 // ── PAGE SWITCHING ─────────────────────
-function showPage(id,tabEl,sideEl){
+function showPage(id){
+  // Hide all pages
   document.querySelectorAll('.dash-page').forEach(p=>p.classList.remove('active'));
-  document.getElementById('page-'+id).classList.add('active');
+  // Show target page
+  const page=document.getElementById('page-'+id);
+  if(page)page.classList.add('active');
+  // Update top nav tabs
   document.querySelectorAll('.app-tab').forEach(t=>t.classList.remove('active'));
-  document.querySelectorAll('.sidebar-item').forEach(s=>s.classList.remove('active'));
   const tabMap={overview:'tabOverview',signals:'tabSignals',feed:'tabFeed'};
-  const sideMap={overview:'si-overview',signals:'si-signals',feed:'si-feed'};
   if(tabMap[id])document.getElementById(tabMap[id])?.classList.add('active');
+  // Update sidebar items
+  document.querySelectorAll('.sidebar-item').forEach(s=>s.classList.remove('active'));
+  const sideMap={overview:'si-overview',signals:'si-signals',feed:'si-feed'};
   if(sideMap[id])document.getElementById(sideMap[id])?.classList.add('active');
 }
 function ctab(btn){btn.closest('.chart-tabs').querySelectorAll('.chart-tab').forEach(t=>t.classList.remove('active'));btn.classList.add('active');}
