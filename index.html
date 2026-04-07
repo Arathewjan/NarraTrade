@@ -464,14 +464,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--font-d);font-size:
         <button class="persona-bar-edit" onclick="window.location.href='onboarding.html'">✎ Edit Personas</button>
       </div>
     </div>
-    <div class="sidebar-watchlist">
-      <div class="sidebar-label" style="margin-bottom:9px">Watchlist</div>
-      <div class="watch-item"><div><div class="watch-sym">NVDA</div><div class="watch-price" id="wp-NVDA">—</div></div><div class="watch-chg" id="wc-NVDA">—</div></div>
-      <div class="watch-item"><div><div class="watch-sym">TSLA</div><div class="watch-price" id="wp-TSLA">—</div></div><div class="watch-chg" id="wc-TSLA">—</div></div>
-      <div class="watch-item"><div><div class="watch-sym">SPY</div><div class="watch-price" id="wp-SPY">—</div></div><div class="watch-chg" id="wc-SPY">—</div></div>
-      <div class="watch-item"><div><div class="watch-sym">AAPL</div><div class="watch-price" id="wp-AAPL">—</div></div><div class="watch-chg" id="wc-AAPL">—</div></div>
-      <div class="watch-item"><div><div class="watch-sym">BTC-USD</div><div class="watch-price" id="wp-BTC-USD">—</div></div><div class="watch-chg" id="wc-BTC-USD">—</div></div>
-    </div>
+
   </aside>
 
   <!-- PAGES -->
@@ -604,17 +597,6 @@ body{background:var(--bg);color:var(--text);font-family:var(--font-d);font-size:
     <!-- ── LIVE FEED (news + trade plays) ── -->
     <div class="dash-page" id="page-feed">
       <div class="feed-bars">
-        <div class="persona-bar-top">
-          <div class="persona-bar-label-top">YOUR PERSONAS</div>
-          <div id="personaPillsFeed" style="display:flex;align-items:center;gap:8px;flex:1"></div>
-          <button class="persona-bar-edit-top" onclick="window.location.href='onboarding.html'">✎ EDIT PERSONAS</button>
-        </div>
-        <div class="signal-legend">
-          <div class="legend-label">SIGNAL KEY</div>
-          <div class="legend-item bull"><div class="legend-swatch sw-bull"></div>BULLISH <span class="legend-desc">— Buy / Long</span></div>
-          <div class="legend-item bear"><div class="legend-swatch sw-bear"></div>BEARISH <span class="legend-desc">— Sell / Short</span></div>
-          <div class="legend-item neut"><div class="legend-swatch sw-neut"></div>MIXED <span class="legend-desc">— Conflicting</span></div>
-        </div>
         <div class="filter-bar">
           <button class="filter-btn active" onclick="setFilter('all',this)">All</button><div class="filter-sep"></div>
           <button class="filter-btn" onclick="setFilter('bearish',this)">▼ Bearish</button>
@@ -1205,10 +1187,7 @@ async function loadMkt(){
       const pv=document.getElementById('pv-'+sym),pc=document.getElementById('pc-'+sym);
       if(pv)pv.textContent=fmt;
       if(pc){pc.textContent=(chg>=0?'+':'')+chg.toFixed(2)+'%';pc.className='pulse-chg '+(chg>=0?'up':'down');}
-      // Watchlist sidebar
-      const wp=document.getElementById('wp-'+sym),wc=document.getElementById('wc-'+sym);
-      if(wp)wp.textContent=fmt;
-      if(wc){wc.textContent=(chg>=0?'+':'')+chg.toFixed(2)+'%';wc.className='watch-chg '+(chg>=0?'up':'dn');}
+
     }catch{}
   }
 }
