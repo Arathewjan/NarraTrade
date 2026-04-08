@@ -136,17 +136,26 @@ const sb=supabase.createClient(SB_URL,SB_KEY);
 let allEvents=[],activeFilter='all',weekOffset=0;
 
 (async()=>{
-  // Retry session check — Supabase can be slow to hydrate on first load
-  let session = null;
-  for(let i=0;i<3;i++){
-    const{data}=await sb.auth.getSession();
-    if(data?.session){session=data.session;break;}
-    await new Promise(r=>setTimeout(r,400));
+  // Wait for auth — use both getSession and onAuthStateChange
+(async function(){
+  var started=false;
+  function boot(session){
+    if(started)return;
+    started=true;
+    if(!session||!session.user){window.location.href='onboarding.html';return;}
+    var name=session.user.user_metadata&&session.user.user_metadata.full_name?session.user.user_metadata.full_name:session.user.email.split('@')[0];
+    var av=document.getElementById('navAvatar');if(av)av.textContent=name.charAt(0).toUpperCase();
+    loadCalendar();
   }
-  if(!session?.user){window.location.href='onboarding.html';return;}
-  const name=session.user.user_metadata?.full_name||session.user.email.split('@')[0];
-  document.getElementById('navAvatar').textContent=name.charAt(0).toUpperCase();
-  loadCalendar();
+  // Try immediately
+  var res=await sb.auth.getSession();
+  if(res.data&&res.data.session){boot(res.data.session);return;}
+  // Listen for auth state change (fires when session loads from storage)
+  sb.auth.onAuthStateChange(function(event,session){
+    if(event==='SIGNED_IN'||event==='INITIAL_SESSION'){boot(session);}
+  });
+  // Fallback: if nothing fires in 2s, redirect to login
+  setTimeout(function(){if(!started){window.location.href='onboarding.html';}},2000);
 })();
 
 function getRange(offset){
