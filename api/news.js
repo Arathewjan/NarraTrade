@@ -1,45 +1,36 @@
 module.exports = async (req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
-  if (req.method === 'OPTIONS') return res.status(200).end();
-
-  const FINNHUB_KEY = process.env.FINNHUB_KEY;
-  console.log('[debug] FINNHUB_KEY length:', FINNHUB_KEY ? FINNHUB_KEY.length : 0);
-  if (!FINNHUB_KEY) return res.status(500).json({ error: 'FINNHUB_KEY not set' });
-
-  const cats = ['general', 'forex', 'crypto', 'merger'];
-
+  res.setHeader('Cache-Control', 's-maxage=120, stale-while-revalidate=60');
+  const KEY = process.env.FINNHUB_KEY || 'd0o3b09r01qi0jaoe3ogd0o3b09r01qi0jaoe3p0';
+  const cats = ['general','forex','crypto','merger'];
+  const catMap = {'general':'general','forex':'macro','crypto':'crypto','merger':'merger'};
   try {
-    const results = await Promise.all(cats.map(async (cat) => {
-      const r = await fetch(
-        `https://finnhub.io/api/v1/news?category=${cat}&token=${FINNHUB_KEY}`,
-        { headers: { 'User-Agent': 'NarraTrade/1.0' } }
-      );
-      console.log(`[debug] Finnhub "${cat}": status=${r.status}`);
-      if (!r.ok) {
-        console.error(`Finnhub error for category "${cat}": ${r.status} ${r.statusText}`);
-        return [];
-      }
-      const items = await r.json();
-      console.log(`[debug] Finnhub "${cat}": count=${Array.isArray(items) ? items.length : 'not array'}, first=`, JSON.stringify(Array.isArray(items) ? items[0] : items));
-      return Array.isArray(items) ? items.map(i => ({ ...i, _cat: cat })) : [];
-    }));
-
-    const cutoff = Math.floor(Date.now() / 1000) - 86400;
+    const results = await Promise.all(cats.map(cat =>
+      fetch(`https://finnhub.io/api/v1/news?category=${cat}&minId=0&token=${KEY}`)
+        .then(r => r.json())
+        .catch(() => [])
+    ));
     const seen = new Set();
-    const merged = results.flat()
-      .filter(i => i.id && i.headline && i.headline.length > 10)
-      .filter(i => i.datetime && i.datetime > cutoff)
-      .filter(i => {
-        if (seen.has(i.id)) return false;
-        seen.add(i.id);
-        return true;
-      })
-      .sort((a, b) => (b.datetime || 0) - (a.datetime || 0))
-      .slice(0, 12);
-
-    return res.status(200).json(merged);
-  } catch (err) {
-    return res.status(500).json({ error: err.message });
+    const items = [];
+    results.forEach((arr, ci) => {
+      (Array.isArray(arr) ? arr : []).slice(0, 8).forEach(a => {
+        if (!a.headline || seen.has(a.id)) return;
+        seen.add(a.id);
+        items.push({
+          id: a.id,
+          headline: a.headline,
+          summary: (a.summary || '').slice(0, 180),
+          source: a.source,
+          url: a.url,
+          datetime: a.datetime,
+          _cat: catMap[cats[ci]] || 'general',
+        });
+      });
+    });
+    // Sort newest first, cap at 20
+    items.sort((a,b) => b.datetime - a.datetime);
+    res.status(200).json(items.slice(0, 20));
+  } catch(e) {
+    res.status(500).json({ error: e.message });
   }
 };
