@@ -426,7 +426,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--font-d);font-size:
       <div class="live-dot"></div><span id="pillLabel">LOADING...</span>
     </div>
     <div class="header-clock" id="clock"></div>
-    <a class="nav-journal-link" href="journal.html">📓 JOURNAL</a>
+    <a class="nav-journal-link" href="calendar.html">📅 CALENDAR</a>
     <div class="app-badge">BETA</div>
     <div class="app-avatar" id="userAvatar">M</div>
   </div>
@@ -438,15 +438,13 @@ body{background:var(--bg);color:var(--text);font-family:var(--font-d);font-size:
   <aside class="dash-sidebar">
     <div class="sidebar-section">
       <div class="sidebar-label">Views</div>
-      <button class="sidebar-item active" id="si-overview" onclick="showPage('overview',null,this)">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>Overview
-      </button>
+      
 
-      <button class="sidebar-item" id="si-feed" onclick="showPage('feed',null,this)">
+      <button class="sidebar-item active" id="si-feed" onclick="showPage('feed',null,this)">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>Live Feed
       </button>
-      <a class="sidebar-item" href="journal.html" style="text-decoration:none">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14,2 14,8 20,8"/></svg>Journal
+      <a class="sidebar-item" href="calendar.html" style="text-decoration:none">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>Calendar
       </a>
     </div>
     <div class="sidebar-section">
@@ -463,99 +461,9 @@ body{background:var(--bg);color:var(--text);font-family:var(--font-d);font-size:
   <!-- PAGES -->
   <div class="pages-wrapper">
 
-    <!-- ── OVERVIEW ── -->
-    <div class="dash-page active" id="page-overview">
-      <div class="overview-main">
-        <div class="page-header">
-          <div>
-            <div class="page-title" id="greeting">Good morning 👋</div>
-            <div class="page-sub" id="dateStr"></div>
-          </div>
-          <div class="dash-search">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
-            Search...
-            <span style="margin-left:10px;font-size:10px;background:var(--surface2);padding:2px 8px;border-radius:4px;font-family:var(--font-m)">⌘K</span>
-          </div>
-        </div>
-
-        <div class="kpi-grid">
-          <div class="kpi-card green">
-            <div class="kpi-label">PORTFOLIO VALUE</div>
-            <div class="kpi-val" id="kpiBalance">$—</div>
-            <div class="kpi-sub neu">Your brokerage balance</div>
-          </div>
-          <div class="kpi-card blue">
-            <div class="kpi-label">OPEN P&amp;L</div>
-            <div class="kpi-val" id="kpiTrades" style="color:var(--accent)">0</div>
-            <div class="kpi-sub neu">Logged trades</div>
-          </div>
-          <div class="kpi-card purple">
-            <div class="kpi-label">LIVE STORIES</div>
-            <div class="kpi-val" id="kpiStories">—</div>
-            <div class="kpi-sub neu">From Finnhub wire</div>
-          </div>
-          <div class="kpi-card gold">
-            <div class="kpi-label">MARKET SENTIMENT</div>
-            <div class="kpi-val" id="kpiSentiment" style="color:var(--gold)">—</div>
-            <div class="kpi-sub neu">Fear &amp; Greed Index</div>
-          </div>
-        </div>
-
-          <div class="chart-row">
-            <div class="chart-card">
-              <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px">
-                <div>
-                  <div class="chart-title">Portfolio Simulation</div>
-                  <div class="chart-sub">Based on your logged trades · resets on each new trade</div>
-                </div>
-                <button onclick="resetPortfolio()" style="font-family:var(--font-m);font-size:8px;letter-spacing:1px;padding:4px 12px;border-radius:20px;border:1px solid var(--border2);background:none;color:var(--muted);cursor:pointer;transition:all 0.2s" onmouseover="this.style.borderColor='rgba(255,77,109,0.4)';this.style.color='var(--red)'" onmouseout="this.style.borderColor='var(--border2)';this.style.color='var(--muted)'">↺ RESET</button>
-              </div>
-              <canvas id="portfolioChart" height="140" style="width:100%;display:block"></canvas>
-              <div style="display:flex;gap:24px;margin-top:10px;align-items:center">
-                <div style="font-family:var(--font-m);font-size:11px;color:var(--muted)">Starting balance: <span id="simStart" style="color:var(--text)">$—</span></div>
-                <div style="font-family:var(--font-m);font-size:11px;color:var(--muted)">Simulated P&amp;L: <span id="simPnl" style="color:var(--accent)">$—</span></div>
-                <div style="font-family:var(--font-m);font-size:11px;color:var(--muted)">Trades: <span id="simTrades" style="color:var(--text)">0</span></div>
-              </div>
-            </div>
-            <div class="chart-card">
-              <div class="chart-title">Trade Breakdown</div>
-              <div class="chart-sub">From your journal</div>
-              <div id="tradeBreakdown"><div style="color:var(--muted);font-size:11px;font-family:var(--font-m)">No trades logged yet.</div></div>
-            </div>
-          </div>
-
-        <div class="bottom-row">
-          <div class="panel-card">
-            <div class="panel-card-title">Market Sentiment</div>
-            <div style="display:flex;flex-direction:column;align-items:center;padding:8px 0 6px">
-              <div style="width:130px;height:70px;position:relative;overflow:hidden">
-                <svg viewBox="0 0 130 70" style="width:100%;height:140px">
-                  <defs><linearGradient id="gg" x1="0%" y1="0%" x2="100%" y2="0%"><stop offset="0%" stop-color="#ff4d6d"/><stop offset="50%" stop-color="#f5c842"/><stop offset="100%" stop-color="#00e5a0"/></linearGradient></defs>
-                  <path d="M 15 65 A 50 50 0 0 1 115 65" fill="none" stroke="#1a2535" stroke-width="9" stroke-linecap="round"/>
-                  <path id="gfill" d="M 15 65 A 50 50 0 0 1 115 65" fill="none" stroke="url(#gg)" stroke-width="9" stroke-linecap="round" stroke-dasharray="157" stroke-dashoffset="157"/>
-                  <line id="gneedle" x1="65" y1="65" x2="65" y2="20" stroke="#f5c842" stroke-width="2" stroke-linecap="round"/>
-                  <circle cx="65" cy="65" r="4" fill="#f5c842" id="gdot"/><circle cx="65" cy="65" r="2" fill="white"/>
-                </svg>
-              </div>
-              <div id="fgVal">—</div>
-              <div id="fgLbl">LOADING</div>
-              <div style="display:flex;justify-content:space-between;font-family:var(--font-m);font-size:7px;color:var(--muted2);margin-top:6px;width:130px"><span>FEAR</span><span>NEUTRAL</span><span>GREED</span></div>
-            </div>
-          </div>
-          <div class="panel-card">
-            <div class="panel-card-title">Economic Calendar</div>
-            <div class="cal-item"><div class="cal-dot" style="background:var(--red)"></div><div><div class="cal-event">CPI Report</div><div class="cal-meta">Wed Apr 8 · 8:30 AM ET</div></div><div class="cal-impact" style="background:rgba(255,77,109,0.1);color:var(--red)">HIGH</div></div>
-            <div class="cal-item"><div class="cal-dot" style="background:var(--gold)"></div><div><div class="cal-event">FOMC Minutes</div><div class="cal-meta">Thu Apr 9 · 2:00 PM ET</div></div><div class="cal-impact" style="background:rgba(245,200,66,0.1);color:var(--gold)">MED</div></div>
-            <div class="cal-item"><div class="cal-dot" style="background:var(--accent2)"></div><div><div class="cal-event">Michigan Sentiment</div><div class="cal-meta">Fri Apr 10 · 10:00 AM ET</div></div><div class="cal-impact" style="background:rgba(0,149,255,0.1);color:var(--accent2)">MED</div></div>
-            <div class="cal-item"><div class="cal-dot" style="background:var(--accent)"></div><div><div class="cal-event">JPMorgan Earnings</div><div class="cal-meta">Fri Apr 10 · Pre-market</div></div><div class="cal-impact" style="background:rgba(0,229,160,0.1);color:var(--accent)">LOW</div></div>
-          </div>
-        </div>
-      </div>
-    </div>
-
     <!-- ── SIGNALS ── -->
     <!-- ── LIVE FEED (news + trade plays) ── -->
-    <div class="dash-page" id="page-feed">
+    <div class="dash-page active" id="page-feed">
       <div class="feed-bars">
         <div class="filter-bar">
           <button class="filter-btn active" onclick="setFilter('all',this)">All</button><div class="filter-sep"></div>
@@ -663,6 +571,7 @@ let stories=[],filter='all',personas=[],refreshTimer,countdown=300,user=null;
   renderPersonaPills();
   loadBrokerageBalance();
   loadWatchlist();
+  showPage('feed');
   if(!window._feedLoaded){ window._feedLoaded=true; loadFeed(); }
   setInterval(loadSidebar,120000);
   updateKPIs();
