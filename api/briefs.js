@@ -7,7 +7,7 @@ module.exports = async (req, res) => {
   if (!ANTHROPIC_KEY) return res.status(500).json({ error: 'ANTHROPIC_KEY not set' });
   const { newsItems } = req.body || {};
   if (!newsItems || !newsItems.length) return res.status(400).json({ error: 'No news items' });
-  const batch = newsItems.slice(0, 8);
+  const batch = newsItems.slice(0, 6);
   const input = batch.map((item, i) => ({ i, h: item.headline, s: (item.summary || '').slice(0, 200), cat: item._cat || 'general' }));
   const prompt = `You are a senior equity analyst and options trader. Analyze these ${input.length} financial news headlines and return precise trade intelligence. Return ONLY a valid JSON array. No markdown, no explanation, just the array.
 
@@ -35,7 +35,7 @@ Return the JSON array now:`;
     const r = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'x-api-key': ANTHROPIC_KEY, 'anthropic-version': '2023-06-01' },
-      body: JSON.stringify({ model: 'claude-haiku-4-5-20251001', max_tokens: 3000, temperature: 0, messages: [{ role: 'user', content: prompt }] }),
+      body: JSON.stringify({ model: 'claude-haiku-4-5-20251001', max_tokens: 2000, temperature: 0, messages: [{ role: 'user', content: prompt }] }),
     });
     if (!r.ok) { const err = await r.json().catch(() => ({})); throw new Error(err.error?.message || `Claude HTTP ${r.status}`); }
     const data = await r.json();
