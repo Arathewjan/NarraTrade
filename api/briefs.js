@@ -11,7 +11,7 @@ module.exports = async (req, res) => {
   if (!newsItems || !newsItems.length) return res.status(400).json({ error: 'No news items' });
 
   // Process up to 12 stories
-  const batch = newsItems.slice(0, 12);
+  const batch = newsItems.slice(0, 8);
   const input = batch.map((item, i) => ({
     i,
     h: item.headline,
@@ -24,13 +24,14 @@ module.exports = async (req, res) => {
 Return ONLY a valid JSON array. No markdown, no explanation, just the array.
 
 Each object must have:
-{"i":<index>,"impact":"bearish|bullish|mixed","category":"geopolitical|macro|earnings|commodities|crypto|forex|merger|general","oneLiner":"<under 12 words describing market impact>","plays":[{"direction":"LONG|SHORT|COMMODITY","ticker":"<US ticker symbol>","name":"<company or ETF name>","rationale":"<one sentence why>","conviction":<1|2|3>,"type":"equity|etf|commodity|crypto|bond"}]}
+{"i":<index>,"impact":"bearish|bullish","category":"geopolitical|macro|earnings|commodities|crypto|forex|merger|general","oneLiner":"<under 12 words describing market impact>","plays":[{"direction":"LONG|SHORT|COMMODITY","ticker":"<US ticker symbol>","name":"<company or ETF name>","rationale":"<one sentence why>","conviction":<1|2|3>,"type":"equity|etf|commodity|crypto|bond"}]}
 
 Rules:
 - 1-2 plays per story max
 - conviction: 1=low, 2=medium, 3=high
 - Use real US-listed tickers only
 - oneLiner must be market-impact focused
+- impact must be ONLY "bullish" or "bearish" — never mixed, always pick the dominant direction
 
 NEWS TO ANALYZE:
 ${JSON.stringify(input)}
