@@ -532,38 +532,33 @@ let stories=[],filter='all',personas=[],refreshTimer,countdown=300,user=null;
 
 // ── AUTH GUARD ─────────────────────────
 (async()=>{
-  try{
-  const{data:{session}}=await sb.auth.getSession();
-  if(!session?.user){window.location.href='onboarding.html';return;}
-  user=session.user;
-  const name=user.user_metadata?.full_name||user.email.split('@')[0];
-  document.getElementById('userAvatar').textContent=name.charAt(0).toUpperCase();
-  const hr=new Date().getHours();
-  document.getElementById('greeting').textContent=(hr<12?'Good morning':hr<17?'Good afternoon':'Good evening')+', '+name.split(' ')[0]+' 👋';
-  document.getElementById('dateStr').textContent=new Date().toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric'});
+  try {
+    const{data:{session}}=await sb.auth.getSession();
+    if(!session?.user){window.location.href='onboarding.html';return;}
+    user=session.user;
+    const name=user.user_metadata?.full_name||user.email.split('@')[0];
+    document.getElementById('userAvatar').textContent=name.charAt(0).toUpperCase();
+    const hr=new Date().getHours();
+    const greet=document.getElementById('greeting');
+    if(greet)greet.textContent=(hr<12?'Good morning':hr<17?'Good afternoon':'Good evening')+', '+name.split(' ')[0]+' 👋';
+    const ds=document.getElementById('dateStr');
+    if(ds)ds.textContent=new Date().toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric'});
 
-  const{data:p}=await sb.from('profiles').select('personas').eq('id',user.id).single();
-  if(p?.personas?.length){
-    personas=p.personas;
+    const{data:p}=await sb.from('profiles').select('personas').eq('id',user.id).single();
+    if(p?.personas?.length){personas=p.personas;localStorage.setItem('narratrade-personas',JSON.stringify(personas));}
+    else{const s=localStorage.getItem('narratrade-personas');personas=s?JSON.parse(s):[];if(!personas.length){window.location.href='onboarding.html';return;}}
     localStorage.setItem('narratrade-personas',JSON.stringify(personas));
-  }else{
-    const s=localStorage.getItem('narratrade-personas');
-    personas=s?JSON.parse(s):[];
-    if(!personas.length){window.location.href='onboarding.html';return;}
-  }
-  // Always keep localStorage in sync
-  if(personas.length)localStorage.setItem('narratrade-personas',JSON.stringify(personas));
 
-  renderPersonaPills();
-  
-  loadWatchlist();
-  showPage('feed');
-  if(!window._feedLoaded){ window._feedLoaded=true; loadFeed(); }
-  setInterval(loadSidebar,120000);
-  try{updateKPIs();}catch(e){console.warn('KPI update skipped:',e.message);}
-  }catch(fatalErr){
-    console.error('Auth IIFE error:',fatalErr);
-    // Still try to load the feed even if something else crashed
+    renderPersonaPills();
+    loadWatchlist();
+    setInterval(loadSidebar,120000);
+
+    // Load feed immediately — don't wait for anything else
+    window._feedLoaded=true;
+    loadFeed();
+  } catch(err) {
+    console.error('Init error:',err);
+    // Even on error, try to load the feed
     if(!window._feedLoaded){window._feedLoaded=true;loadFeed();}
   }
 })();
