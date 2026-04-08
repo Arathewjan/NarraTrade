@@ -441,10 +441,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--font-d);font-size:
       <button class="sidebar-item active" id="si-overview" onclick="showPage('overview',null,this)">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>Overview
       </button>
-      <button class="sidebar-item" id="si-signals" onclick="showPage('signals',null,this)">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22,12 18,12 15,21 9,3 6,12 2,12"/></svg>Signals
-        <span class="sbadge">3</span>
-      </button>
+
       <button class="sidebar-item" id="si-feed" onclick="showPage('feed',null,this)">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>Live Feed
       </button>
@@ -557,39 +554,6 @@ body{background:var(--bg);color:var(--text);font-family:var(--font-d);font-size:
     </div>
 
     <!-- ── SIGNALS ── -->
-    <div class="dash-page" id="page-signals">
-      <div class="signals-main">
-        <div class="signals-header">
-          <div><div class="page-title">Signals</div><div class="page-sub">AI-curated news · trade setups · live sentiment</div></div>
-          <div class="sig-filters">
-            <div class="sig-filter active" onclick="filterSig(this)">All</div>
-            <div class="sig-filter" onclick="filterSig(this)">Bullish</div>
-            <div class="sig-filter" onclick="filterSig(this)">Bearish</div>
-            <div class="sig-filter" onclick="filterSig(this)">Watchlist</div>
-          </div>
-        </div>
-        <div class="signals-grid">
-          <div class="article-feed" id="signalFeed">
-            <div class="feed-loading"><div class="big-spin"></div><p>LOADING SIGNALS...</p><small>Feed initializes on app load — takes 20-30s</small></div>
-          </div>
-          <div class="signal-panel">
-            <div class="signal-card">
-              <div class="signal-card-title">Active Signals</div>
-              <div id="signalItems"><div style="color:var(--muted);font-size:10px">Loading after feed...</div></div>
-            </div>
-            <div class="ai-pulse">
-              <div class="ai-pulse-header"><div class="ai-dot"></div><div class="ai-pulse-label">MARKET PULSE · LIVE</div></div>
-              <div class="ai-pulse-text" id="pulseTxt">Analyzing market conditions...</div>
-            </div>
-            <div class="signal-card">
-              <div class="signal-card-title">Sector Flow</div>
-              <div id="sectorSignal"><div style="color:var(--muted);font-size:10px">Loading...</div></div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
     <!-- ── LIVE FEED (news + trade plays) ── -->
     <div class="dash-page" id="page-feed">
       <div class="feed-bars">
@@ -635,16 +599,22 @@ body{background:var(--bg);color:var(--text);font-family:var(--font-d);font-size:
             </div>
           </div>
           <div class="sidebar-section">
+            <div class="sidebar-label">Active Signals</div>
+            <div id="signalItems"><div style="color:var(--muted);font-size:10px;font-family:var(--font-m)">Loading after feed...</div></div>
+          </div>
+          <div class="sidebar-section">
+            <div class="ai-pulse">
+              <div class="ai-pulse-header"><div class="ai-dot"></div><div class="ai-pulse-label">MARKET PULSE · LIVE</div></div>
+              <div class="ai-pulse-text" id="pulseTxt">Analyzing market conditions...</div>
+            </div>
+          </div>
+          <div class="sidebar-section">
+            <div class="sidebar-label">Sector Flow</div>
+            <div id="sectorSignal"><div style="color:var(--muted);font-size:10px;font-family:var(--font-m)">Loading...</div></div>
+          </div>
+          <div class="sidebar-section">
             <div class="sidebar-label">Market Pulse</div>
             <div id="mktPulse"><div style="color:var(--muted);font-size:10px">Loading...</div></div>
-          </div>
-          <div class="sidebar-section">
-            <div class="sidebar-label">Sector Snapshot</div>
-            <div id="sectorHeat"><div style="color:var(--muted);font-size:10px">Loading...</div></div>
-          </div>
-          <div class="sidebar-section">
-            <div class="sidebar-label">Top AI Trade Plays</div>
-            <div id="topPlays"><div style="color:var(--muted);font-size:10px">Loads after feed</div></div>
           </div>
           <div class="disclaimer">⚠ Trade ideas are AI-generated. Not financial advice. Always do your own research.</div>
         </div>
@@ -714,7 +684,6 @@ function showPage(id){
   if(sideEl)sideEl.classList.add('active');
   // If stories already loaded, re-render the target page immediately
   if(stories.length){
-    if(id==='signals')renderSignalPage();
     if(id==='feed')renderFeed();
     if(id==='overview')updateKPIs();
   }
@@ -1168,6 +1137,7 @@ async function deepAnalyze(id){
 
 function renderTopPlays(){
   const all=[];stories.forEach(s=>(s.plays||[]).forEach(p=>{if(p.conviction>=2)all.push({...p});}));all.sort((a,b)=>b.conviction-a.conviction);
+  return; // topPlays merged into signalItems via renderSignalPage
   const el=document.getElementById('topPlays');if(!el)return;
   el.innerHTML=all.slice(0,8).map((p,i)=>{
     const bg=p.direction==='LONG'?'var(--long-bg)':p.direction==='SHORT'?'var(--short-bg)':'var(--comm-bg)';
@@ -1235,7 +1205,7 @@ async function loadSectors(){
     }catch{results.push({label:s.label,chg:0});}
   }
   const mx=Math.max(...results.map(r=>Math.abs(r.chg)),0.01);
-  const sh=document.getElementById('sectorHeat');
+  const sh=document.getElementById('sectorSignal') || document.getElementById('sectorHeat');
   if(sh)sh.innerHTML=results.map(r=>{const c=r.chg>=0?'var(--bull)':'var(--bear)';return`<div class="sector-row"><div class="sector-name">${r.label}</div><div class="sector-bar-wrap"><div class="sector-bar-fill" style="width:${Math.abs(r.chg)/mx*100}%;background:${c}"></div></div><div class="sector-pct" style="color:${c}">${r.chg>=0?'+':''}${r.chg.toFixed(2)}%</div></div>`;}).join('');
 }
 
