@@ -433,8 +433,6 @@ body{background:var(--bg);color:var(--text);font-family:var(--font-d);font-size:
     <div class="app-avatar" id="userAvatar">M</div>
   </div>
 </nav>
-<div class="refresh-track"><div class="refresh-fill" id="refreshFill" style="width:100%"></div></div>
-
 <!-- DASH LAYOUT -->
 <div class="dash-layout">
 
@@ -574,7 +572,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--font-d);font-size:
         </div>
         <div class="signals-grid">
           <div class="article-feed" id="signalFeed">
-            <div class="feed-loading"><div class="big-spin"></div><p>LOADING SIGNALS...</p></div>
+            <div class="feed-loading"><div class="big-spin"></div><p>LOADING SIGNALS...</p><small>Feed initializes on app load — takes 20-30s</small></div>
           </div>
           <div class="signal-panel">
             <div class="signal-card">
@@ -597,6 +595,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--font-d);font-size:
     <!-- ── LIVE FEED (news + trade plays) ── -->
     <div class="dash-page" id="page-feed">
       <div class="feed-bars">
+        <div class="refresh-track"><div class="refresh-fill" id="refreshFill" style="width:100%"></div></div>
         <div class="filter-bar">
           <button class="filter-btn active" onclick="setFilter('all',this)">All</button><div class="filter-sep"></div>
           <button class="filter-btn" onclick="setFilter('bearish',this)">▼ Bearish</button>
@@ -717,6 +716,12 @@ function showPage(id){
   document.querySelectorAll('.sidebar-item').forEach(s=>s.classList.remove('active'));
   const sideEl=document.getElementById('si-'+id);
   if(sideEl)sideEl.classList.add('active');
+  // If stories already loaded, re-render the target page immediately
+  if(stories.length){
+    if(id==='signals')renderSignalPage();
+    if(id==='feed')renderFeed();
+    if(id==='overview')updateKPIs();
+  }
 }
 function ctab(btn){btn.closest('.chart-tabs').querySelectorAll('.chart-tab').forEach(t=>t.classList.remove('active'));btn.classList.add('active');}
 function filterSig(el){document.querySelectorAll('.sig-filter').forEach(f=>f.classList.remove('active'));el.classList.add('active');}
@@ -896,30 +901,59 @@ async function loadFeed(){
   setPill('loading','FETCHING WIRE...');
   fc(`<div class="feed-loading"><div class="big-spin"></div><p>PULLING NARRATRADE LIVE WIRE...</p><small>Reuters · Dow Jones · MarketWatch</small></div>`);
   try{
+    // Step 1: fetch news
     const nr=await fetch('/api/news?_='+Date.now());
-    if(!nr.ok)throw new Error('News HTTP '+nr.status);
+    if(!nr.ok)throw new Error('News API error: '+nr.status);
     const raw=await nr.json();
-    if(!raw.length)throw new Error('No stories returned');
-    fc(`<div class="feed-loading"><div class="big-spin"></div><p>GENERATING TRADE BRIEFS FOR ${raw.length} STORIES...</p><small>Claude is analyzing each headline</small></div>`);
+    if(!raw||!raw.length)throw new Error('No stories returned from Finnhub');
+
+    // Step 2: fetch AI briefs with 28s timeout (Vercel limit is 30s)
+    fc(`<div class="feed-loading"><div class="big-spin"></div><p>ANALYZING ${raw.length} STORIES...</p><small>Claude is generating trade plays</small></div>`);
     document.getElementById('signalFeed').innerHTML=`<div class="feed-loading"><div class="big-spin"></div><p>ANALYZING SIGNALS...</p></div>`;
-    const br=await fetch('/api/briefs',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({newsItems:raw})});
-    if(!br.ok){const e=await br.json().catch(()=>({}));throw new Error(e.error||'Briefs HTTP '+br.status);}
-    const briefs=await br.json();
+
+    let briefs=[];
+    try{
+      const timeout=new Promise((_,rej)=>setTimeout(()=>rej(new Error('timeout')),28000));
+      const brFetch=fetch('/api/briefs',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({newsItems:raw})});
+      const br=await Promise.race([brFetch,timeout]);
+      if(br.ok)briefs=await br.json();
+      else console.warn('Briefs non-ok:',br.status);
+    }catch(e){
+      console.warn('Briefs failed/timed out, showing raw news:',e.message);
+    }
+
+    // Build stories — works even if briefs is empty
     stories=raw.map((item,idx)=>{
-      const ai=briefs.find(b=>b.i===idx)||briefs[idx]||{};
-      return{id:item.id||idx,headline:item.headline,summary:item.summary||'',source:item.source||'Finnhub',url:item.url||'',datetime:item.datetime,_cat:item._cat,impact:ai.impact||'mixed',category:ai.category||item._cat||'general',oneLiner:ai.oneLiner||'',plays:ai.plays||[]};
+      const ai=(briefs&&briefs.find)?briefs.find(b=>b.i===idx)||briefs[idx]||{}:{};
+      return{
+        id:item.id||idx,
+        headline:item.headline,
+        summary:item.summary||'',
+        source:item.source||'Finnhub',
+        url:item.url||'',
+        datetime:item.datetime,
+        _cat:item._cat,
+        impact:ai.impact||'mixed',
+        category:ai.category||item._cat||'general',
+        oneLiner:ai.oneLiner||'',
+        plays:ai.plays||[]
+      };
     });
+
     const now=new Date();
     const lf=document.getElementById('lastFetch'),sc=document.getElementById('storyCount');
     if(lf)lf.textContent='Updated '+now.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
     if(sc)sc.textContent=stories.length+' stories';
+
     renderNotice();renderFeed();renderSignalPage();renderTopPlays();loadSidebar();startCountdown();
     setPill('live','↺ REFRESH FEED');
     updateKPIs();
+
   }catch(err){
-    console.error(err);
-    fc(`<div class="feed-loading" style="color:var(--red)"><p>FEED ERROR</p><small style="color:var(--muted);max-width:400px;text-align:center">${esc(err.message)}</small><button onclick="loadFeed()" style="margin-top:16px;font-family:var(--font-m);font-size:10px;background:none;border:1px solid var(--red);color:var(--red);padding:8px 20px;cursor:pointer;border-radius:20px">↺ RETRY</button></div>`);
-    document.getElementById('signalFeed').innerHTML=`<div style="color:var(--muted);font-size:12px;padding:20px">Failed to load signals. <a href="#" onclick="loadFeed();return false" style="color:var(--accent)">Retry</a></div>`;
+    console.error('loadFeed error:',err);
+    const msg=err.message||'Unknown error';
+    fc(`<div class="feed-loading" style="color:var(--red)"><p>FEED ERROR</p><small style="color:var(--muted);max-width:400px;text-align:center;line-height:1.6">${esc(msg)}</small><button onclick="loadFeed()" style="margin-top:16px;font-family:var(--font-m);font-size:10px;background:none;border:1px solid var(--red);color:var(--red);padding:8px 20px;cursor:pointer;border-radius:20px">↺ RETRY</button></div>`);
+    document.getElementById('signalFeed').innerHTML=`<div style="color:var(--muted);font-size:12px;padding:20px;font-family:var(--font-m)">Signals unavailable. <a href="#" onclick="loadFeed();return false" style="color:var(--accent)">↺ Retry</a></div>`;
     setPill('error','↺ RETRY');
   }
 }
