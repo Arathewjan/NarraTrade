@@ -35,7 +35,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--font-d);font-size:
   display:flex;align-items:center;justify-content:space-between;
   padding:0 24px;height:62px;
   background:rgba(8,12,20,0.97);
-  border-bottom:1px solid var(--border);box-shadow:0 1px 24px rgba(0,0,0,0.5)
+  border-bottom:1px solid var(--border)
 }
 .nav-logo{font-size:18px;font-weight:800;letter-spacing:-0.5px;cursor:pointer}
 .nav-logo span{color:var(--accent)}
@@ -52,8 +52,6 @@ body{background:var(--bg);color:var(--text);font-family:var(--font-d);font-size:
 .nav-journal-link:hover{color:var(--accent);border-color:rgba(0,229,160,0.3)}
 
 /* REFRESH BAR */
-.refresh-track{height:2px;background:transparent;overflow:hidden}
-.refresh-fill{height:100%;background:linear-gradient(90deg,var(--accent2),var(--accent));transition:width 1s linear}
 
 /* DASHBOARD LAYOUT */
 .dash-layout{display:grid;grid-template-columns:216px 1fr;min-height:calc(100vh - 64px)}
@@ -195,7 +193,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--font-d);font-size:
 
 /* ── NEWS FEED PAGE ── */
 .feed-page{padding:0}
-.feed-bars{}
+.feed-bars{background:var(--bg)}
 
 .persona-bar-top{background:var(--surface);border-bottom:1px solid var(--border);padding:0 32px;display:flex;align-items:center;height:46px;gap:10px}
 .persona-bar-label-top{font-family:var(--font-m);font-size:8px;letter-spacing:2px;color:var(--muted);text-transform:uppercase;margin-right:6px}
@@ -211,7 +209,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--font-d);font-size:
 .legend-item.bull{color:var(--bull-text)}.legend-item.bear{color:var(--bear-text)}.legend-item.neut{color:var(--neut-text)}
 .legend-desc{font-family:var(--font-m);font-size:8px;color:var(--muted);font-weight:400}
 
-.filter-bar{background:var(--bg);border-bottom:1px solid var(--border);padding:0 32px;display:flex;align-items:center;height:42px;gap:2px;overflow-x:auto}
+.filter-bar{background:var(--bg);padding:0 32px;display:flex;align-items:center;height:42px;gap:2px;overflow-x:auto;border-bottom:1px solid var(--border)}
 .filter-btn{font-family:var(--font-m);font-size:9px;letter-spacing:1.5px;text-transform:uppercase;padding:0 12px;height:26px;border:1px solid transparent;background:none;color:var(--muted);cursor:pointer;border-radius:13px;transition:all 0.15s;white-space:nowrap}
 .filter-btn:hover{color:var(--text);background:var(--surface);border-color:var(--border2)}
 .filter-btn.active{color:var(--accent);background:rgba(0,229,160,0.07);border-color:rgba(0,229,160,0.25);font-weight:600}
@@ -595,7 +593,6 @@ body{background:var(--bg);color:var(--text);font-family:var(--font-d);font-size:
     <!-- ── LIVE FEED (news + trade plays) ── -->
     <div class="dash-page" id="page-feed">
       <div class="feed-bars">
-        <div class="refresh-track"><div class="refresh-fill" id="refreshFill" style="width:100%"></div></div>
         <div class="filter-bar">
           <button class="filter-btn active" onclick="setFilter('all',this)">All</button><div class="filter-sep"></div>
           <button class="filter-btn" onclick="setFilter('bearish',this)">▼ Bearish</button>
