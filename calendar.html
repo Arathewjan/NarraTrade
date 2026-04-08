@@ -136,7 +136,13 @@ const sb=supabase.createClient(SB_URL,SB_KEY);
 let allEvents=[],activeFilter='all',weekOffset=0;
 
 (async()=>{
-  const{data:{session}}=await sb.auth.getSession();
+  // Retry session check — Supabase can be slow to hydrate on first load
+  let session = null;
+  for(let i=0;i<3;i++){
+    const{data}=await sb.auth.getSession();
+    if(data?.session){session=data.session;break;}
+    await new Promise(r=>setTimeout(r,400));
+  }
   if(!session?.user){window.location.href='onboarding.html';return;}
   const name=session.user.user_metadata?.full_name||session.user.email.split('@')[0];
   document.getElementById('navAvatar').textContent=name.charAt(0).toUpperCase();
