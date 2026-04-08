@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NarraTrade — Economic Calendar</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#080c14;--surface:#0d1420;--surface2:#111927;
+  --border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.11);--border3:rgba(255,255,255,0.18);
+  --text:#e8edf5;--muted:#6b7a96;--muted2:#3d4d66;
+  --accent:#00e5a0;--accent2:#0095ff;--accent3:#7b5ea7;--red:#ff4d6d;--gold:#f5c842;
+  --font-d:'Syne',sans-serif;--font-m:'DM Mono',monospace;
+}
+html,body{background:var(--bg);color:var(--text);font-family:var(--font-d);-webkit-font-smoothing:antialiased;font-size:13px}
+.app-nav{position:sticky;top:0;z-index:200;display:flex;align-items:center;justify-content:space-between;padding:0 32px;height:62px;background:rgba(8,12,20,0.97);border-bottom:1px solid var(--border)}
+.nav-logo{font-size:18px;font-weight:800;letter-spacing:-0.5px;text-decoration:none;color:var(--text)}
+.nav-logo span{color:var(--accent)}
+.nav-links{display:flex;gap:4px}
+.nav-link{padding:7px 16px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;color:var(--muted);text-decoration:none;transition:all 0.15s;border:none;background:none;font-family:var(--font-d)}
+.nav-link:hover{color:var(--text);background:var(--surface2)}
+.nav-link.active{background:var(--accent);color:#000}
+.nav-right{display:flex;gap:10px;align-items:center}
+.app-badge{background:var(--red);color:#fff;font-size:10px;font-weight:700;border-radius:20px;padding:2px 8px}
+.nav-avatar{width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,#7b5ea7,#0095ff);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700}
+
+.cal-page{max-width:1100px;margin:0 auto;padding:32px 24px}
+.cal-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:28px;flex-wrap:wrap;gap:16px}
+.cal-title{font-size:22px;font-weight:800;letter-spacing:-0.5px}
+.cal-sub{font-size:11px;color:var(--muted);font-family:var(--font-m);margin-top:3px}
+.cal-controls{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.cal-filter{font-family:var(--font-m);font-size:9px;letter-spacing:1.5px;padding:6px 14px;border-radius:20px;border:1px solid var(--border2);background:none;color:var(--muted);cursor:pointer;transition:all 0.15s}
+.cal-filter:hover{border-color:var(--border3);color:var(--text)}
+.cal-filter.active{background:rgba(0,229,160,0.08);color:var(--accent);border-color:rgba(0,229,160,0.3)}
+.cal-filter.high-f.active{background:rgba(255,77,109,0.08);color:var(--red);border-color:rgba(255,77,109,0.3)}
+.cal-filter.med-f.active{background:rgba(245,200,66,0.08);color:var(--gold);border-color:rgba(245,200,66,0.3)}
+
+.week-nav{display:flex;align-items:center;gap:10px}
+.week-btn{background:var(--surface);border:1px solid var(--border2);color:var(--muted);font-family:var(--font-m);font-size:11px;padding:6px 14px;border-radius:8px;cursor:pointer;transition:all 0.15s}
+.week-btn:hover{border-color:var(--border3);color:var(--text)}
+.week-label{font-family:var(--font-m);font-size:11px;color:var(--muted);min-width:160px;text-align:center}
+
+.stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:28px}
+.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px}
+.stat-label{font-family:var(--font-m);font-size:9px;letter-spacing:1.5px;color:var(--muted);text-transform:uppercase;margin-bottom:8px}
+.stat-val{font-size:22px;font-weight:800;font-family:var(--font-m)}
+.stat-sub{font-size:10px;color:var(--muted);font-family:var(--font-m);margin-top:3px}
+
+.day-block{margin-bottom:24px}
+.day-header{display:flex;align-items:center;gap:12px;margin-bottom:10px}
+.day-label{font-size:13px;font-weight:700;letter-spacing:0.3px}
+.day-date{font-family:var(--font-m);font-size:10px;color:var(--muted)}
+.day-count{font-family:var(--font-m);font-size:9px;color:var(--muted2);background:var(--surface2);padding:2px 8px;border-radius:10px;border:1px solid var(--border)}
+.today-badge{font-family:var(--font-m);font-size:8px;font-weight:700;color:#000;background:var(--accent);padding:2px 8px;border-radius:10px;letter-spacing:1px}
+
+.event-table{background:var(--surface);border:1px solid var(--border);border-radius:13px;overflow:hidden}
+.event-row{display:grid;grid-template-columns:90px 1fr 80px 100px 100px 100px;align-items:center;padding:13px 18px;border-bottom:1px solid var(--border);transition:background 0.15s;gap:8px}
+.event-row:last-child{border-bottom:none}
+.event-row:hover{background:var(--surface2)}
+.event-row.header-row{background:var(--surface2);font-family:var(--font-m);font-size:8px;letter-spacing:1.5px;color:var(--muted2);text-transform:uppercase;border-bottom:1px solid var(--border2)}
+.event-time{font-family:var(--font-m);font-size:11px;color:var(--muted)}
+.event-name{font-size:12px;font-weight:700;line-height:1.3}
+.event-country{display:flex;align-items:center;gap:5px;font-family:var(--font-m);font-size:10px;color:var(--muted)}
+.impact-pill{display:inline-flex;align-items:center;gap:4px;font-family:var(--font-m);font-size:8px;font-weight:700;padding:2px 8px;border-radius:10px;letter-spacing:1px;white-space:nowrap}
+.imp-high{background:rgba(255,77,109,0.1);color:var(--red);border:1px solid rgba(255,77,109,0.25)}
+.imp-med{background:rgba(245,200,66,0.08);color:var(--gold);border:1px solid rgba(245,200,66,0.2)}
+.imp-low{background:rgba(107,122,150,0.08);color:var(--muted);border:1px solid var(--border2)}
+.event-val{font-family:var(--font-m);font-size:11px;text-align:right}
+.val-actual{color:var(--accent);font-weight:700}
+.val-forecast{color:var(--muted)}
+.val-prev{color:var(--muted2)}
+.val-pending{color:var(--muted2);font-size:10px}
+.impact-dot{width:6px;height:6px;border-radius:50%}
+.dot-high{background:var(--red)}.dot-med{background:var(--gold)}.dot-low{background:var(--muted2)}
+
+.loading-state{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:80px;color:var(--muted);gap:14px}
+.big-spin{width:24px;height:24px;border:1.5px solid var(--border2);border-top-color:var(--accent);border-radius:50%;animation:spin 1s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loading-state p{font-family:var(--font-m);font-size:10px;letter-spacing:1px}
+
+.empty-state{text-align:center;padding:60px;color:var(--muted);font-family:var(--font-m);font-size:11px}
+
+.ai-summary{background:linear-gradient(135deg,rgba(0,229,160,0.06),rgba(0,149,255,0.05));border:1px solid rgba(0,229,160,0.15);border-radius:13px;padding:18px 22px;margin-bottom:24px;display:flex;gap:14px;align-items:flex-start}
+.ai-icon{width:32px;height:32px;border-radius:8px;background:linear-gradient(135deg,var(--accent),var(--accent2));display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;margin-top:2px}
+.ai-label{font-family:var(--font-m);font-size:8px;letter-spacing:2px;color:var(--accent);margin-bottom:5px}
+.ai-text{font-family:var(--font-m);font-size:11px;color:var(--muted);line-height:1.65}
+
+::-webkit-scrollbar{width:3px}::-webkit-scrollbar-thumb{background:var(--muted2);border-radius:2px}
+</style>
+</head>
+<body>
+<nav class="app-nav">
+  <a class="nav-logo" href="index.html">NARRA<span>.</span>TRADE</a>
+  <div class="nav-links">
+    <a class="nav-link" href="index.html">Live Feed</a>
+    <span class="nav-link active">Calendar</span>
+  </div>
+  <div class="nav-right">
+    <div class="app-badge">BETA</div>
+    <div class="nav-avatar" id="navAvatar">M</div>
+  </div>
+</nav>
+
+<div class="cal-page">
+  <div class="cal-header">
+    <div>
+      <div class="cal-title">Economic Calendar</div>
+      <div class="cal-sub" id="calSub">Loading events from Finnhub...</div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:10px;align-items:flex-end">
+      <div class="week-nav">
+        <button class="week-btn" onclick="shiftWeek(-1)">← Prev</button>
+        <div class="week-label" id="weekLabel">—</div>
+        <button class="week-btn" onclick="shiftWeek(1)">Next →</button>
+      </div>
+      <div class="cal-controls">
+        <button class="cal-filter active" onclick="setImpact('all',this)">All</button>
+        <button class="cal-filter high-f" onclick="setImpact('high',this)">🔴 High Impact</button>
+        <button class="cal-filter med-f" onclick="setImpact('medium',this)">🟡 Medium</button>
+        <button class="cal-filter" onclick="setImpact('low',this)">⚪ Low</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="stats-row" id="statsRow">
+    <div class="stat-card"><div class="stat-label">This Week</div><div class="stat-val" id="sTotal">—</div><div class="stat-sub">Total events</div></div>
+    <div class="stat-card"><div class="stat-label">High Impact</div><div class="stat-val" id="sHigh" style="color:var(--red)">—</div><div class="stat-sub">Market-moving</div></div>
+    <div class="stat-card"><div class="stat-label">Next Event</div><div class="stat-val" id="sNext" style="font-size:14px">—</div><div class="stat-sub" id="sNextTime">—</div></div>
+    <div class="stat-card"><div class="stat-label">Data Source</div><div class="stat-val" style="font-size:13px;color:var(--accent)">Finnhub</div><div class="stat-sub">Live economic data</div></div>
+  </div>
+
+  <div class="ai-summary" id="aiSummary" style="display:none">
+    <div class="ai-icon">✦</div>
+    <div>
+      <div class="ai-label">WEEK PREVIEW · AI GENERATED</div>
+      <div class="ai-text" id="aiText">Analyzing this week's economic events...</div>
+    </div>
+  </div>
+
+  <div id="calBody"><div class="loading-state"><div class="big-spin"></div><p>FETCHING ECONOMIC CALENDAR...</p></div></div>
+</div>
+
+<script>
+const SB_URL='https://bjbvtwqckknngaamuaam.supabase.co';
+const SB_KEY='sb_publishable_f_j6gPsZNgBqVFWAt6wKRg_pgJkQx7P';
+const FINNHUB_KEY='d0o3b09r01qi0jaoe3ogd0o3b09r01qi0jaoe3p0';
+const sb=supabase.createClient(SB_URL,SB_KEY);
+
+let allEvents=[], impactFilter='all', weekOffset=0;
+
+// Auth guard
+(async()=>{
+  const{data:{session}}=await sb.auth.getSession();
+  if(!session?.user){window.location.href='onboarding.html';return;}
+  const name=session.user.user_metadata?.full_name||session.user.email.split('@')[0];
+  document.getElementById('navAvatar').textContent=name.charAt(0).toUpperCase();
+  loadCalendar();
+})();
+
+function getWeekRange(offset=0){
+  const now=new Date();
+  const day=now.getDay(); // 0=Sun
+  const monday=new Date(now);
+  monday.setDate(now.getDate()-(day===0?6:day-1)+(offset*7));
+  monday.setHours(0,0,0,0);
+  const friday=new Date(monday);
+  friday.setDate(monday.getDate()+6);
+  friday.setHours(23,59,59,999);
+  return{from:monday,to:friday};
+}
+
+function fmtDate(d){return d.toISOString().slice(0,10);}
+
+function updateWeekLabel(){
+  const{from,to}=getWeekRange(weekOffset);
+  const opts={month:'short',day:'numeric'};
+  document.getElementById('weekLabel').textContent=from.toLocaleDateString('en-US',opts)+' – '+to.toLocaleDateString('en-US',{...opts,year:'numeric'});
+}
+
+async function loadCalendar(){
+  updateWeekLabel();
+  document.getElementById('calBody').innerHTML='<div class="loading-state"><div class="big-spin"></div><p>FETCHING ECONOMIC CALENDAR...</p></div>';
+
+  const{from,to}=getWeekRange(weekOffset);
+  const fromStr=fmtDate(from), toStr=fmtDate(to);
+  document.getElementById('calSub').textContent='Showing events '+fromStr+' to '+toStr+' · Powered by Finnhub';
+
+  try{
+    const url=`https://finnhub.io/api/v1/calendar/economic?from=${fromStr}&to=${toStr}&token=${FINNHUB_KEY}`;
+    const r=await fetch(url);
+    if(!r.ok) throw new Error('Finnhub HTTP '+r.status);
+    const data=await r.json();
+    allEvents=(data.economicCalendar||[]).sort((a,b)=>new Date(a.time||a.date)-new Date(b.time||b.date));
+    renderCalendar();
+    updateStats();
+    generateAISummary();
+  }catch(e){
+    document.getElementById('calBody').innerHTML=`<div class="empty-state">Failed to load calendar: ${e.message}<br><br><button onclick="loadCalendar()" style="margin-top:12px;font-family:var(--font-m);font-size:10px;background:none;border:1px solid var(--border2);color:var(--muted);padding:8px 20px;cursor:pointer;border-radius:20px">↺ Retry</button></div>`;
+  }
+}
+
+function shiftWeek(dir){weekOffset+=dir;loadCalendar();}
+function setImpact(f,btn){
+  impactFilter=f;
+  document.querySelectorAll('.cal-filter').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  renderCalendar();
+}
+
+function impactLevel(ev){
+  const i=(ev.impact||'').toLowerCase();
+  if(i==='high'||i==='3'||i===3) return 'high';
+  if(i==='medium'||i==='med'||i==='2'||i===2) return 'medium';
+  return 'low';
+}
+
+function renderCalendar(){
+  let filtered=allEvents;
+  if(impactFilter!=='all') filtered=allEvents.filter(e=>impactLevel(e)===impactFilter);
+  if(!filtered.length){document.getElementById('calBody').innerHTML='<div class="empty-state">No events found for this filter.</div>';return;}
+
+  // Group by date
+  const groups={};
+  filtered.forEach(ev=>{
+    const d=(ev.time||ev.date||'').slice(0,10);
+    if(!groups[d])groups[d]=[];
+    groups[d].push(ev);
+  });
+
+  const today=fmtDate(new Date());
+  let html='';
+  Object.keys(groups).sort().forEach(dateStr=>{
+    const evs=groups[dateStr];
+    const dt=new Date(dateStr+'T12:00:00');
+    const dayName=dt.toLocaleDateString('en-US',{weekday:'long'});
+    const dateLabel=dt.toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'});
+    const isToday=dateStr===today;
+    html+=`<div class="day-block">
+      <div class="day-header">
+        <div class="day-label">${dayName}</div>
+        <div class="day-date">${dateLabel}</div>
+        <div class="day-count">${evs.length} event${evs.length!==1?'s':''}</div>
+        ${isToday?'<div class="today-badge">TODAY</div>':''}
+      </div>
+      <div class="event-table">
+        <div class="event-row header-row">
+          <div>Time (ET)</div><div>Event</div><div>Impact</div><div style="text-align:right">Actual</div><div style="text-align:right">Forecast</div><div style="text-align:right">Previous</div>
+        </div>
+        ${evs.map(ev=>eventRow(ev)).join('')}
+      </div>
+    </div>`;
+  });
+  document.getElementById('calBody').innerHTML=html;
+}
+
+function eventRow(ev){
+  const imp=impactLevel(ev);
+  const impClass={high:'imp-high',medium:'imp-med',low:'imp-low'}[imp];
+  const impLabel={high:'HIGH',medium:'MED',low:'LOW'}[imp];
+  const dotClass={high:'dot-high',medium:'dot-med',low:'dot-low'}[imp];
+
+  // Time
+  let timeStr='TBD';
+  if(ev.time){
+    const t=new Date(ev.time);
+    if(!isNaN(t)) timeStr=t.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',timeZone:'America/New_York'});
+  }
+
+  // Values
+  const hasActual=ev.actual!=null&&ev.actual!=='';
+  const actual=hasActual?`<span class="val-actual">${fmtVal(ev.actual,ev.unit)}</span>`:'<span class="val-pending">—</span>';
+  const forecast=ev.estimate!=null&&ev.estimate!==''?`<span class="val-forecast">${fmtVal(ev.estimate,ev.unit)}</span>`:'<span class="val-pending">—</span>';
+  const prev=ev.prev!=null&&ev.prev!==''?`<span class="val-prev">${fmtVal(ev.prev,ev.unit)}</span>`:'<span class="val-pending">—</span>';
+
+  return`<div class="event-row">
+    <div class="event-time">${timeStr}</div>
+    <div><div class="event-name">${esc(ev.event||ev.name||'—')}</div><div class="event-country">${ev.country||'US'}</div></div>
+    <div><span class="impact-pill ${impClass}"><span class="impact-dot ${dotClass}"></span>${impLabel}</span></div>
+    <div class="event-val">${actual}</div>
+    <div class="event-val">${forecast}</div>
+    <div class="event-val">${prev}</div>
+  </div>`;
+}
+
+function fmtVal(v,unit){
+  if(v===null||v===undefined||v==='') return '—';
+  const n=parseFloat(v);
+  const u=(unit||'').toLowerCase();
+  if(u.includes('%')||u==='percent') return n.toFixed(1)+'%';
+  if(u.includes('k')||u.includes('thousand')) return n.toLocaleString()+'K';
+  if(u.includes('b')||u.includes('billion')) return '$'+n.toFixed(1)+'B';
+  if(!isNaN(n)&&Math.abs(n)<1000) return n.toFixed(1);
+  return String(v);
+}
+
+function updateStats(){
+  const total=allEvents.length;
+  const high=allEvents.filter(e=>impactLevel(e)==='high').length;
+  document.getElementById('sTotal').textContent=total;
+  document.getElementById('sHigh').textContent=high;
+
+  const now=Date.now();
+  const upcoming=allEvents.filter(e=>{const t=new Date(e.time||e.date);return t>now;}).sort((a,b)=>new Date(a.time||a.date)-new Date(b.time||b.date));
+  if(upcoming.length){
+    const next=upcoming[0];
+    document.getElementById('sNext').textContent=esc((next.event||next.name||'—').slice(0,22));
+    const t=new Date(next.time||next.date);
+    document.getElementById('sNextTime').textContent=t.toLocaleDateString('en-US',{month:'short',day:'numeric'})+' · '+t.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',timeZone:'America/New_York'});
+  }
+}
+
+async function generateAISummary(){
+  const highEvents=allEvents.filter(e=>impactLevel(e)==='high').slice(0,6);
+  if(!highEvents.length) return;
+  const summaryEl=document.getElementById('aiSummary');
+  const textEl=document.getElementById('aiText');
+  summaryEl.style.display='flex';
+  textEl.textContent='Analyzing this week\'s high-impact events...';
+
+  try{
+    const eventList=highEvents.map(e=>`${(e.time||e.date||'').slice(0,10)}: ${e.event||e.name}${e.estimate!=null?' (Est: '+e.estimate+(e.unit||'')+')':''}`).join('\n');
+    const r=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','x-api-key':'placeholder'},
+      body:JSON.stringify({model:'claude-haiku-4-5-20251001',max_tokens:300,messages:[{role:'user',content:`In 2-3 sentences, give a trader-focused preview of these upcoming economic events and which markets/sectors to watch:\n${eventList}`}]})
+    });
+    const d=await r.json();
+    const text=(d.content||[]).filter(c=>c.type==='text').map(c=>c.text).join('');
+    if(text) textEl.textContent=text;
+    else textEl.textContent=`${highEvents.length} high-impact events this week including ${highEvents.slice(0,2).map(e=>e.event||e.name).join(' and ')}. Monitor these closely for volatility.`;
+  }catch{
+    textEl.textContent=`${highEvents.length} high-impact events this week including ${highEvents.slice(0,2).map(e=>e.event||e.name).join(' and ')}. Monitor bond markets, USD, and rate-sensitive equities around these releases.`;
+  }
+}
+
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+</script>
+</body>
+</html>
