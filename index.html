@@ -492,21 +492,6 @@ body{background:var(--bg);color:var(--text);font-family:var(--font-d);font-size:
         </div>
         <div class="sidebar">
           <div class="sidebar-section">
-            <div class="sidebar-label">Brokerage Balance</div>
-            <div class="brokerage-widget">
-              <div class="bw-label">Account Value</div>
-              <div class="bw-display">
-                <div class="bw-amount" id="bwAmount">$—</div>
-                <button class="bw-edit-btn" onclick="toggleBw()">Edit</button>
-              </div>
-              <div class="bw-broker" id="bwBroker">Add your balance for accurate P&amp;L tracking</div>
-              <div class="bw-edit-form" id="bwEditForm">
-                <input class="bw-input" id="bwInput" placeholder="e.g. 84320" type="number" min="0">
-                <button class="bw-save" onclick="saveBw()">Save</button>
-              </div>
-            </div>
-          </div>
-          <div class="sidebar-section">
             <div class="sidebar-label">Active Signals</div>
             <div id="signalItems"><div style="color:var(--muted);font-size:10px;font-family:var(--font-m)">Loading after feed...</div></div>
           </div>
@@ -569,7 +554,7 @@ let stories=[],filter='all',personas=[],refreshTimer,countdown=300,user=null;
   if(personas.length)localStorage.setItem('narratrade-personas',JSON.stringify(personas));
 
   renderPersonaPills();
-  loadBrokerageBalance();
+  
   loadWatchlist();
   showPage('feed');
   if(!window._feedLoaded){ window._feedLoaded=true; loadFeed(); }
@@ -766,13 +751,7 @@ function renderTradeBreakdown(trades){
   `;
 }
 
-// ── BROKERAGE ──────────────────────────
-function loadBrokerageBalance(){
-  const saved=localStorage.getItem('narratrade-balance');
-  if(saved){const amt=parseFloat(saved);document.getElementById('bwAmount').textContent='$'+amt.toLocaleString('en-US',{maximumFractionDigits:0});document.getElementById('bwBroker').textContent='Tap Edit to update anytime';}
-}
-function toggleBw(){document.getElementById('bwEditForm').classList.toggle('open');if(document.getElementById('bwEditForm').classList.contains('open')){const s=localStorage.getItem('narratrade-balance');if(s)document.getElementById('bwInput').value=s;document.getElementById('bwInput').focus();}}
-function saveBw(){const val=parseFloat(document.getElementById('bwInput').value);if(isNaN(val)||val<0){document.getElementById('bwInput').style.borderColor='var(--red)';return;}document.getElementById('bwInput').style.borderColor='';localStorage.setItem('narratrade-balance',val.toString());document.getElementById('bwAmount').textContent='$'+val.toLocaleString('en-US',{maximumFractionDigits:0});document.getElementById('bwBroker').textContent='Tap Edit to update anytime';document.getElementById('bwEditForm').classList.remove('open');updateKPIs();}
+// Brokerage widget removed
 
 // ── FILTER ─────────────────────────────
 function setFilter(f,btn){filter=f;document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));btn.classList.add('active');renderFeed();}
@@ -792,15 +771,27 @@ async function loadFeed(){
     fc(`<div class="feed-loading"><div class="big-spin"></div><p>ANALYZING ${raw.length} STORIES...</p><small>Claude is generating trade plays</small></div>`);
     // signalFeed removed — signals now live in sidebar
 
+    // Show raw news immediately for fast load
+    stories=raw.map((item,idx)=>({
+      id:item.id||idx,headline:item.headline,summary:item.summary||'',
+      source:item.source||'Finnhub',url:item.url||'',datetime:item.datetime,
+      _cat:item._cat,impact:'mixed',category:item._cat||'general',oneLiner:'',plays:[]
+    }));
+    renderFeed();
+    const sc=document.getElementById('storyCount');if(sc)sc.textContent=stories.length+' stories';
+    setPill('loading','ANALYZING...');
+    fc2(`<div class="feed-loading" style="padding:20px 0"><div class="big-spin"></div><p>AI GENERATING TRADE PLAYS...</p></div>`,true);
+
+    // Then fetch AI briefs in background
     let briefs=[];
     try{
-      const timeout=new Promise((_,rej)=>setTimeout(()=>rej(new Error('timeout')),28000));
+      const timeout=new Promise((_,rej)=>setTimeout(()=>rej(new Error('timeout')),20000));
       const brFetch=fetch('/api/briefs',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({newsItems:raw})});
       const br=await Promise.race([brFetch,timeout]);
       if(br.ok)briefs=await br.json();
       else console.warn('Briefs non-ok:',br.status);
     }catch(e){
-      console.warn('Briefs failed/timed out, showing raw news:',e.message);
+      console.warn('Briefs timed out, keeping raw news:',e.message);
     }
 
     // Build stories — works even if briefs is empty
@@ -826,6 +817,7 @@ async function loadFeed(){
     if(lf)lf.textContent='Updated '+now.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
     if(sc)sc.textContent=stories.length+' stories';
 
+    if(document.querySelector('.ai-loading-bar'))document.querySelector('.ai-loading-bar').remove();
     renderNotice();renderFeed();renderSignalPage();renderTopPlays();loadSidebar();startCountdown();
     setPill('live','↺ REFRESH FEED');
     updateKPIs();
@@ -840,6 +832,18 @@ async function loadFeed(){
 }
 
 function fc(html){const el=document.getElementById('feedContainer');if(el)el.innerHTML=html;}
+function fc2(html,append){
+  if(!append){fc(html);return;}
+  // append a small status bar above the feed
+  const el=document.getElementById('feedContainer');
+  if(!el)return;
+  const existing=el.querySelector('.ai-loading-bar');
+  if(existing)existing.remove();
+  const div=document.createElement('div');
+  div.className='ai-loading-bar';
+  div.innerHTML=html;
+  el.insertBefore(div,el.firstChild);
+}
 
 // ── RENDER FEED ────────────────────────
 function renderFeed(){
