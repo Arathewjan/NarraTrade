@@ -597,7 +597,6 @@ body{background:var(--bg);color:var(--text);font-family:var(--font-d);font-size:
           <button class="filter-btn active" onclick="setFilter('all',this)">All</button><div class="filter-sep"></div>
           <button class="filter-btn" onclick="setFilter('bearish',this)">▼ Bearish</button>
           <button class="filter-btn" onclick="setFilter('bullish',this)">▲ Bullish</button>
-          <button class="filter-btn" onclick="setFilter('mixed',this)">◆ Mixed</button>
           <div class="filter-sep"></div>
           <button class="filter-btn" onclick="setFilter('geopolitical',this)">Geopolitical</button>
           <button class="filter-btn" onclick="setFilter('macro',this)">Macro / Fed</button>
@@ -960,7 +959,7 @@ function fc(html){const el=document.getElementById('feedContainer');if(el)el.inn
 // ── RENDER FEED ────────────────────────
 function renderFeed(){
   const iF=['bearish','bullish','mixed'];
-  let list=filter==='all'?stories:stories.filter(s=>iF.includes(filter)?s.impact===filter:s.category===filter||s._cat===filter);
+  let list=(filter==='all'?stories.filter(s=>s.impact!=='mixed'):stories.filter(s=>iF.includes(filter)?s.impact===filter:s.category===filter||s._cat===filter));
   const vis=list.filter(s=>matches(s)),hid=list.filter(s=>!matches(s));
   const sc=document.getElementById('storyCount');if(sc)sc.textContent=vis.length+' stories';
   if(!vis.length&&!hid.length){fc(`<div class="feed-loading"><p>NO STORIES IN THIS FILTER</p></div>`);return;}
@@ -976,10 +975,9 @@ function renderFeed(){
 function stripHtml(html){return(html||'').replace(/<[^>]*>/g,' ').replace(/&[a-z]+;/gi,m=>({'&amp;':'&','&lt;':'<','&gt;':'>','&nbsp;':' ','&quot;':'"','&#39;':"'"}[m]||m)).replace(/\s+/g,' ').trim();}
 
 function renderSignalPage(){
-  const bull=stories.filter(s=>s.impact==='bullish').slice(0,2);
-  const bear=stories.filter(s=>s.impact==='bearish').slice(0,1);
-  const neu=stories.filter(s=>s.impact==='mixed').slice(0,1);
-  const top=[...bull,...bear,...neu];
+  const bull=stories.filter(s=>s.impact==='bullish').slice(0,3);
+  const bear=stories.filter(s=>s.impact==='bearish').slice(0,2);
+  const top=[...bull,...bear];
   document.getElementById('signalFeed').innerHTML=top.map(s=>{
     const cls={bullish:'bull',bearish:'bear',mixed:'neu'}[s.impact]||'neu';
     const icon={bullish:'↑',bearish:'↓',mixed:'–'}[s.impact]||'–';
