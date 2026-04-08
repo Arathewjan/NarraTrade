@@ -2,14 +2,16 @@ module.exports = async (req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Cache-Control', 's-maxage=120, stale-while-revalidate=60');
   const KEY = process.env.FINNHUB_KEY || 'd0o3b09r01qi0jaoe3ogd0o3b09r01qi0jaoe3p0';
-  const cats = ['general','forex','crypto','merger'];
-  const catMap = {'general':'general','forex':'macro','crypto':'crypto','merger':'merger'};
+  const cats = ['general', 'forex', 'crypto', 'merger'];
+  const catMap = { general: 'general', forex: 'macro', crypto: 'crypto', merger: 'merger' };
   try {
-    const results = await Promise.all(cats.map(cat =>
-      fetch(`https://finnhub.io/api/v1/news?category=${cat}&minId=0&token=${KEY}`)
-        .then(r => r.json())
-        .catch(() => [])
-    ));
+    const results = await Promise.all(
+      cats.map(cat =>
+        fetch('https://finnhub.io/api/v1/news?category=' + cat + '&minId=0&token=' + KEY)
+          .then(r => r.json())
+          .catch(() => [])
+      )
+    );
     const seen = new Set();
     const items = [];
     results.forEach((arr, ci) => {
@@ -27,10 +29,9 @@ module.exports = async (req, res) => {
         });
       });
     });
-    // Sort newest first, cap at 20
-    items.sort((a,b) => b.datetime - a.datetime);
+    items.sort((a, b) => b.datetime - a.datetime);
     res.status(200).json(items.slice(0, 20));
-  } catch(e) {
+  } catch (e) {
     res.status(500).json({ error: e.message });
   }
 };
