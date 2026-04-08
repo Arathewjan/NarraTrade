@@ -578,6 +578,13 @@ let stories=[],filter='all',personas=[],refreshTimer,countdown=300,user=null;
 
 })();
 
+// ── DOM READY FALLBACK ──
+document.addEventListener('DOMContentLoaded',async()=>{
+  if(window._feedLoaded)return;
+  const{data:{session}}=await sb.auth.getSession();
+  if(session&&!window._feedLoaded){window._feedLoaded=true;loadFeed();}
+});
+
 // ── AUTH STATE CHANGE (catches late session resolution) ──
 sb.auth.onAuthStateChange(async(event,session)=>{
   if((event==='SIGNED_IN'||event==='INITIAL_SESSION')&&session&&!window._feedLoaded){
@@ -633,21 +640,503 @@ function matchedFor(s){return personas.filter(p=>(PC[p]||[]).includes(s.category
 function updateKPIs(){
   const trades=JSON.parse(localStorage.getItem('narratrade-trades')||'[]');
   const bal=parseFloat(localStorage.getItem('narratrade-balance')||'0');
+  const setEl=(id,val)=>{const el=document.getElementById(id);if(el)el.textContent=val;};
+  setEl('kpiTrades',trades.length+' trades');
+  if(bal>0)setEl('kpiBalance','
 
-  // KPI: trade count
-  document.getElementById('kpiTrades').textContent=trades.length+' trades';
+function renderPortfolioSim(trades, startingBalance){
+  const canvas=document.getElementById('portfolioChart');
+  if(!canvas)return;
+  const ctx=canvas.getContext('2d');
+  canvas.width=canvas.offsetWidth*window.devicePixelRatio||600;
+  canvas.height=140*window.devicePixelRatio||140;
+  ctx.scale(window.devicePixelRatio||1,window.devicePixelRatio||1);
+  const W=canvas.offsetWidth||600,H=140;
 
-  // KPI: portfolio value (balance)
-  if(bal>0)document.getElementById('kpiBalance').textContent='$'+bal.toLocaleString('en-US',{maximumFractionDigits:0});
+  // Build equity curve from trades
+  // Each trade: entry premium * qty * 100 = cost. Simulate random outcome between SL and TP.
+  const base=startingBalance||10000;
+  let simStart=parseFloat(localStorage.getItem('narratrade-sim-start')||base);
+  document.getElementById('simStart').textContent='$'+simStart.toLocaleString('en-US',{maximumFractionDigits:0});
+  document.getElementById('simTrades').textContent=trades.length;
 
-  // KPI: stories
-  document.getElementById('kpiStories').textContent=stories.length||'—';
+  // Build equity points: start at simStart, each trade moves it
+  const points=[simStart];
+  let running=simStart;
+  [...trades].reverse().forEach(t=>{
+    const entry=parseFloat((t.entry||'').replace(/[$,]/g,''))||0;
+    const tp=parseFloat((t.tp||'').replace(/[$,]/g,''))||0;
+    const sl=parseFloat((t.sl||'').replace(/[$,]/g,''))||0;
+    const qty=parseInt(t.qty)||1;
+    if(!entry)return;
+    // Simulate: weight toward TP 55% of time (slight edge)
+    const win=Math.random()<0.55;
+    const pnl=win?(tp-entry)*qty*100:(sl-entry)*qty*100;
+    running+=pnl;
+    points.push(Math.max(running,0));
+  });
 
-  // Portfolio simulation
-  renderPortfolioSim(trades, bal);
+  if(points.length<2){
+    // No trades — draw flat line
+    ctx.clearRect(0,0,W,H);
+    ctx.strokeStyle='rgba(0,229,160,0.3)';ctx.lineWidth=1.5;ctx.setLineDash([4,4]);
+    ctx.beginPath();ctx.moveTo(0,H/2);ctx.lineTo(W,H/2);ctx.stroke();
+    document.getElementById('simPnl').textContent='$0';
+    document.getElementById('simPnl').style.color='var(--muted)';
+    return;
+  }
 
-  // Trade breakdown
-  renderTradeBreakdown(trades);
+  const minV=Math.min(...points),maxV=Math.max(...points);
+  const range=maxV-minV||1;
+  const pad=16;
+  const xStep=(W-pad*2)/(points.length-1);
+  const yPos=v=>pad+(1-(v-minV)/range)*(H-pad*2);
+  const pts=points.map((v,i)=>({x:pad+i*xStep,y:yPos(v)}));
+
+  ctx.clearRect(0,0,W,H);
+
+  // Gradient fill
+  const grad=ctx.createLinearGradient(0,0,0,H);
+  const finalUp=points[points.length-1]>=points[0];
+  if(finalUp){grad.addColorStop(0,'rgba(0,229,160,0.2)');grad.addColorStop(1,'rgba(0,229,160,0)');}
+  else{grad.addColorStop(0,'rgba(255,77,109,0.15)');grad.addColorStop(1,'rgba(255,77,109,0)');}
+  ctx.beginPath();
+  ctx.moveTo(pts[0].x,pts[0].y);
+  pts.slice(1).forEach(p=>ctx.lineTo(p.x,p.y));
+  ctx.lineTo(pts[pts.length-1].x,H);ctx.lineTo(pts[0].x,H);ctx.closePath();
+  ctx.fillStyle=grad;ctx.fill();
+
+  // Line
+  ctx.beginPath();ctx.moveTo(pts[0].x,pts[0].y);
+  pts.slice(1).forEach(p=>ctx.lineTo(p.x,p.y));
+  ctx.strokeStyle=finalUp?'#00e5a0':'#ff4d6d';ctx.lineWidth=2;ctx.setLineDash([]);ctx.stroke();
+
+  // Dots at each trade
+  pts.forEach((p,i)=>{
+    ctx.beginPath();ctx.arc(p.x,p.y,3,0,Math.PI*2);
+    ctx.fillStyle=finalUp?'#00e5a0':'#ff4d6d';ctx.fill();
+  });
+
+  // P&L display
+  const pnl=running-simStart;
+  const pnlEl=document.getElementById('simPnl');
+  pnlEl.textContent=(pnl>=0?'+$':'-$')+Math.abs(pnl).toLocaleString('en-US',{maximumFractionDigits:0});
+  pnlEl.style.color=pnl>=0?'var(--accent)':'var(--red)';
+}
+
+function resetPortfolio(){
+  const bal=parseFloat(localStorage.getItem('narratrade-balance')||'0')||10000;
+  localStorage.setItem('narratrade-sim-start',bal);
+  updateKPIs();
+}
+
+function renderTradeBreakdown(trades){
+  const el=document.getElementById('tradeBreakdown');if(!el)return;
+  if(!trades.length){el.innerHTML='<div style="color:var(--muted);font-size:11px;font-family:var(--font-m)">No trades logged yet.<br><br>Go to Live Feed → tap any options line → fill in your trade → Save to Journal.</div>';return;}
+  const calls=trades.filter(t=>t.type==='CALL').length;
+  const puts=trades.filter(t=>t.type==='PUT').length;
+  const tickers=[...new Set(trades.map(t=>t.ticker).filter(Boolean))].slice(0,5);
+  const totalContracts=trades.reduce((s,t)=>s+(parseInt(t.qty)||0),0);
+  el.innerHTML=`
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px">
+      <div style="background:var(--surface2);border-radius:9px;padding:12px;border:1px solid var(--border)">
+        <div style="font-family:var(--font-m);font-size:9px;color:var(--muted);letter-spacing:1px;margin-bottom:6px">CALLS</div>
+        <div style="font-size:22px;font-weight:800;color:var(--accent);font-family:var(--font-m)">${calls}</div>
+      </div>
+      <div style="background:var(--surface2);border-radius:9px;padding:12px;border:1px solid var(--border)">
+        <div style="font-family:var(--font-m);font-size:9px;color:var(--muted);letter-spacing:1px;margin-bottom:6px">PUTS</div>
+        <div style="font-size:22px;font-weight:800;color:var(--red);font-family:var(--font-m)">${puts}</div>
+      </div>
+      <div style="background:var(--surface2);border-radius:9px;padding:12px;border:1px solid var(--border)">
+        <div style="font-family:var(--font-m);font-size:9px;color:var(--muted);letter-spacing:1px;margin-bottom:6px">CONTRACTS</div>
+        <div style="font-size:22px;font-weight:800;font-family:var(--font-m)">${totalContracts}</div>
+      </div>
+      <div style="background:var(--surface2);border-radius:9px;padding:12px;border:1px solid var(--border)">
+        <div style="font-family:var(--font-m);font-size:9px;color:var(--muted);letter-spacing:1px;margin-bottom:6px">TICKERS</div>
+        <div style="font-size:11px;font-weight:700;color:var(--text);font-family:var(--font-m);line-height:1.6">${tickers.join(', ')||'—'}</div>
+      </div>
+    </div>
+    ${trades.slice(0,4).map(t=>`
+      <div style="display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid var(--border)">
+        <div style="font-size:12px;font-weight:800;font-family:var(--font-m);width:44px">${esc(t.ticker||'—')}</div>
+        <div style="font-family:var(--font-m);font-size:9px;padding:2px 7px;border-radius:4px;${t.type==='CALL'?'background:rgba(0,229,160,0.1);color:var(--accent)':'background:rgba(255,77,109,0.1);color:var(--red)'}">${t.type||'—'}</div>
+        <div style="font-family:var(--font-m);font-size:10px;color:var(--muted)">${esc(t.expiry||'—')}</div>
+        <div style="font-family:var(--font-m);font-size:10px;color:var(--gold);margin-left:auto">Entry: ${esc(t.entry||'—')}</div>
+      </div>`).join('')}
+  `;
+}
+
+// ── BROKERAGE ──────────────────────────
+function loadBrokerageBalance(){
+  const saved=localStorage.getItem('narratrade-balance');
+  if(saved){const amt=parseFloat(saved);document.getElementById('bwAmount').textContent='$'+amt.toLocaleString('en-US',{maximumFractionDigits:0});document.getElementById('bwBroker').textContent='Tap Edit to update anytime';}
+}
+function toggleBw(){document.getElementById('bwEditForm').classList.toggle('open');if(document.getElementById('bwEditForm').classList.contains('open')){const s=localStorage.getItem('narratrade-balance');if(s)document.getElementById('bwInput').value=s;document.getElementById('bwInput').focus();}}
+function saveBw(){const val=parseFloat(document.getElementById('bwInput').value);if(isNaN(val)||val<0){document.getElementById('bwInput').style.borderColor='var(--red)';return;}document.getElementById('bwInput').style.borderColor='';localStorage.setItem('narratrade-balance',val.toString());document.getElementById('bwAmount').textContent='$'+val.toLocaleString('en-US',{maximumFractionDigits:0});document.getElementById('bwBroker').textContent='Tap Edit to update anytime';document.getElementById('bwEditForm').classList.remove('open');updateKPIs();}
+
+// ── FILTER ─────────────────────────────
+function setFilter(f,btn){filter=f;document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));btn.classList.add('active');renderFeed();}
+
+// ── MAIN FEED LOAD ─────────────────────
+async function loadFeed(){
+  setPill('loading','FETCHING WIRE...');
+  fc(`<div class="feed-loading"><div class="big-spin"></div><p>PULLING NARRATRADE LIVE WIRE...</p><small>Reuters · Dow Jones · MarketWatch</small></div>`);
+  try{
+    // Step 1: fetch news
+    const nr=await fetch('/api/news?_='+Date.now());
+    if(!nr.ok)throw new Error('News API error: '+nr.status);
+    const raw=await nr.json();
+    if(!raw||!raw.length)throw new Error('No stories returned from Finnhub');
+
+    // Step 2: fetch AI briefs with 28s timeout (Vercel limit is 30s)
+    fc(`<div class="feed-loading"><div class="big-spin"></div><p>ANALYZING ${raw.length} STORIES...</p><small>Claude is generating trade plays</small></div>`);
+    // signalFeed removed — signals now live in sidebar
+
+    let briefs=[];
+    try{
+      const timeout=new Promise((_,rej)=>setTimeout(()=>rej(new Error('timeout')),28000));
+      const brFetch=fetch('/api/briefs',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({newsItems:raw})});
+      const br=await Promise.race([brFetch,timeout]);
+      if(br.ok)briefs=await br.json();
+      else console.warn('Briefs non-ok:',br.status);
+    }catch(e){
+      console.warn('Briefs failed/timed out, showing raw news:',e.message);
+    }
+
+    // Build stories — works even if briefs is empty
+    stories=raw.map((item,idx)=>{
+      const ai=(briefs&&briefs.find)?briefs.find(b=>b.i===idx)||briefs[idx]||{}:{};
+      return{
+        id:item.id||idx,
+        headline:item.headline,
+        summary:item.summary||'',
+        source:item.source||'Finnhub',
+        url:item.url||'',
+        datetime:item.datetime,
+        _cat:item._cat,
+        impact:ai.impact||'mixed',
+        category:ai.category||item._cat||'general',
+        oneLiner:ai.oneLiner||'',
+        plays:ai.plays||[]
+      };
+    });
+
+    const now=new Date();
+    const lf=document.getElementById('lastFetch'),sc=document.getElementById('storyCount');
+    if(lf)lf.textContent='Updated '+now.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+    if(sc)sc.textContent=stories.length+' stories';
+
+    renderNotice();renderFeed();renderSignalPage();renderTopPlays();loadSidebar();startCountdown();
+    setPill('live','↺ REFRESH FEED');
+    updateKPIs();
+
+  }catch(err){
+    console.error('loadFeed error:',err);
+    const msg=err.message||'Unknown error';
+    fc(`<div class="feed-loading" style="color:var(--red)"><p>FEED ERROR</p><small style="color:var(--muted);max-width:400px;text-align:center;line-height:1.6">${esc(msg)}</small><button onclick="loadFeed()" style="margin-top:16px;font-family:var(--font-m);font-size:10px;background:none;border:1px solid var(--red);color:var(--red);padding:8px 20px;cursor:pointer;border-radius:20px">↺ RETRY</button></div>`);
+    // signalFeed removed
+    setPill('error','↺ RETRY');
+  }
+}
+
+function fc(html){const el=document.getElementById('feedContainer');if(el)el.innerHTML=html;}
+
+// ── RENDER FEED ────────────────────────
+function renderFeed(){
+  const iF=['bearish','bullish','mixed'];
+  let list=(filter==='all'?stories.filter(s=>s.impact!=='mixed'):stories.filter(s=>iF.includes(filter)?s.impact===filter:s.category===filter||s._cat===filter));
+  const vis=list.filter(s=>matches(s)),hid=list.filter(s=>!matches(s));
+  const sc=document.getElementById('storyCount');if(sc)sc.textContent=vis.length+' stories';
+  if(!vis.length&&!hid.length){fc(`<div class="feed-loading"><p>NO STORIES IN THIS FILTER</p></div>`);return;}
+  let html=vis.map((s,i)=>card(s,i)).join('');
+  if(hid.length){
+    html+=`<div style="font-family:var(--font-m);font-size:8px;letter-spacing:2px;color:var(--muted);margin:20px 0 12px;display:flex;align-items:center;gap:10px"><span style="flex:1;height:1px;background:var(--border)"></span>${hid.length} STORIES HIDDEN BY PERSONA FILTER<span style="flex:1;height:1px;background:var(--border)"></span></div>`;
+    html+=hid.map(s=>`<div style="border:1px dashed var(--border2);border-radius:14px;padding:14px 18px;margin-bottom:12px;display:flex;align-items:center;gap:12px;opacity:0.4"><div style="font-size:18px">🔒</div><div style="flex:1"><div style="height:10px;background:var(--border2);border-radius:4px;margin-bottom:7px;width:65%"></div><div style="height:7px;background:var(--muted2);border-radius:4px;width:85%"></div></div><div style="font-family:var(--font-m);font-size:8px;color:var(--muted);padding:3px 9px;border:1px solid var(--border2);border-radius:20px">${esc(s.category?.toUpperCase()||'GENERAL')}</div></div>`).join('');
+  }
+  fc(html);
+}
+
+// ── SIGNALS PAGE ───────────────────────
+function stripHtml(html){return(html||'').replace(/<[^>]*>/g,' ').replace(/&[a-z]+;/gi,m=>({'&amp;':'&','&lt;':'<','&gt;':'>','&nbsp;':' ','&quot;':'"','&#39;':"'"}[m]||m)).replace(/\s+/g,' ').trim();}
+
+function renderSignalPage(){
+  const bull=stories.filter(s=>s.impact==='bullish').slice(0,3);
+  const bear=stories.filter(s=>s.impact==='bearish').slice(0,2);
+  const top=[...bull,...bear];
+  const sfEl=document.getElementById('signalFeed'); if(sfEl) sfEl.innerHTML=top.map(s=>{
+    const cls={bullish:'bull',bearish:'bear',mixed:'neu'}[s.impact]||'neu';
+    const icon={bullish:'↑',bearish:'↓',mixed:'–'}[s.impact]||'–';
+    const cleanSummary=stripHtml(s.summary||'');
+    const age=s.datetime?Math.round((Date.now()/1000-s.datetime)/60)+'m ago':'';
+    return`<div class="article-card ${cls}">
+      <div class="article-top"><div class="article-headline">${esc(s.headline)}</div><div class="article-sentiment ${cls}">${icon}</div></div>
+      <div class="article-body">${esc(cleanSummary.slice(0,220))}${cleanSummary.length>220?'…':''}</div>
+      <div class="article-footer">
+        <div class="article-tag ${cls}">${s.impact?.toUpperCase()||'MIXED'}</div>
+        ${(s.plays||[]).slice(0,3).map(p=>`<div class="article-ticker">${esc(p.ticker)}</div>`).join('')}
+        <div class="article-source">${esc(s.source)}${age?' · '+age:''}</div>
+      </div>
+    </div>`;
+  }).join('')||'<div style="color:var(--muted);font-size:12px">No signals yet — refresh feed.</div>';
+
+  // Signal items — real conviction values
+  const topPlays=[];
+  stories.forEach(s=>(s.plays||[]).forEach(p=>{if(p.conviction>=2)topPlays.push({...p,impact:s.impact});}));
+  topPlays.sort((a,b)=>b.conviction-a.conviction);
+  const convPct={1:'33%',2:'67%',3:'89%'};
+  const convWidth={1:33,2:67,3:89};
+  document.getElementById('signalItems').innerHTML=topPlays.slice(0,4).map(p=>{
+    const isLong=p.direction==='LONG'||p.direction==='COMMODITY';
+    const pct=convPct[p.conviction]||'67%';
+    const w=convWidth[p.conviction]||67;
+    return`<div class="sig-item"><div class="sig-top"><div class="sig-sym">${esc(p.ticker)}</div><div class="sig-dir ${isLong?'long':'short'}">${p.direction}</div></div><div class="sig-setup">${esc(p.rationale?.slice(0,60)||'')}${(p.rationale||'').length>60?'…':''}</div><div class="sig-conf-row"><div class="sig-bar"><div class="sig-bar-fill ${isLong?'long':'short'}" style="width:${w}%"></div></div><div class="sig-conf-pct ${isLong?'long-c':'short-c'}">${pct}</div></div></div>`;
+  }).join('')||'<div style="color:var(--muted);font-size:10px">No high-conviction plays yet</div>';
+
+  // Market pulse text
+  const bullC=stories.filter(s=>s.impact==='bullish').length;
+  const bearC=stories.filter(s=>s.impact==='bearish').length;
+  const bias=bullC>bearC?'bullish':'bearish';
+  document.getElementById('pulseTxt').innerHTML=`${stories.length} stories analyzed. Market narrative is skewing <span style="color:var(--${bias==='bullish'?'accent':'red'})">${bias}</span> — ${bullC} bullish vs ${bearC} bearish signals from live wire.`;
+
+  // Sector flow — real data
+  loadSignalSectors();
+}
+
+async function loadSignalSectors(){
+  const sec=[{sym:'XLK',label:'Technology'},{sym:'XLF',label:'Financials'},{sym:'XLE',label:'Energy'},{sym:'XLV',label:'Healthcare'}];
+  const results=[];
+  for(const s of sec){
+    try{
+      const r=await fetch(`https://query1.finance.yahoo.com/v8/finance/chart/${s.sym}?interval=1m&range=1d`);
+      const meta=(await r.json())?.chart?.result?.[0]?.meta;
+      const chg=meta?.chartPreviousClose?(meta.regularMarketPrice-meta.chartPreviousClose)/meta.chartPreviousClose*100:null;
+      results.push({label:s.label,chg});
+    }catch{results.push({label:s.label,chg:null});}
+  }
+  const el=document.getElementById('sectorSignal');if(!el)return;
+  const mx=Math.max(...results.map(r=>Math.abs(r.chg||0)),0.01);
+  el.innerHTML=results.map(r=>{
+    const c=r.chg==null?'var(--muted)':r.chg>=0?'var(--accent)':'var(--red)';
+    const w=r.chg==null?0:Math.abs(r.chg)/mx*100;
+    const lbl=r.chg==null?'—':(r.chg>=0?'+':'')+r.chg.toFixed(2)+'%';
+    return`<div style="display:flex;justify-content:space-between;align-items:center;font-size:12px;padding:6px 0;border-bottom:1px solid var(--border)"><span style="font-family:var(--font-m)">${r.label}</span><div style="display:flex;align-items:center;gap:8px"><div style="width:72px;height:3px;border-radius:2px;background:var(--border2);overflow:hidden"><div style="width:${w}%;height:100%;background:${c};border-radius:2px"></div></div><span style="color:${c};font-family:var(--font-m);font-size:10px">${lbl}</span></div></div>`;
+  }).join('');
+}
+
+
+// ── CARD BUILDER ───────────────────────
+function toggleCard(id){
+  const el=document.getElementById('nc-'+id);
+  if(!el)return;
+  el.classList.toggle('expanded');
+}
+
+function card(s,i){
+  const ageMin=s.datetime?Math.round((Date.now()/1000-s.datetime)/60):null;
+  const age=ageMin==null?'':ageMin<60?ageMin+'m ago':ageMin<1440?Math.floor(ageMin/60)+'h ago':Math.floor(ageMin/1440)+'d ago';
+  const imp=s.impact||'mixed';
+  const sentCls={bullish:'bull',bearish:'bear',mixed:'neu'}[imp]||'neu';
+  const sentIcon={bullish:'↑',bearish:'↓',mixed:'–'}[imp]||'–';
+  const pillCls={bullish:'pill-bull',bearish:'pill-bear',mixed:'pill-neu'}[imp]||'pill-neu';
+  const pillLbl={bullish:'BULLISH',bearish:'BEARISH',mixed:'MIXED'}[imp]||'MIXED';
+  const cleanSummary=stripHtml(s.summary||'');
+
+  // Tickers from plays
+  const tickers=[...new Set((s.plays||[]).map(p=>p.ticker).filter(Boolean))].slice(0,3);
+  const tickerTags=tickers.map(t=>`<span class="card-ticker-tag">${esc(t)}</span>`).join('');
+
+  // Trade rows (expanded)
+  const tradeRows=(s.plays||[]).map(p=>{
+    const isLong=p.direction==='LONG'||p.direction==='COMMODITY';
+    const rowCls=p.direction==='LONG'?'long-r':p.direction==='SHORT'?'short-r':'comm-r';
+    const dirCls=p.direction==='LONG'?'long':p.direction==='SHORT'?'short':'comm';
+    const dots=[1,2,3].map(n=>`<div class="tr-dot${n<=p.conviction?' on':''}"></div>`).join('');
+    const convLabel=['','LOW','MED','HIGH'][p.conviction]||'MED';
+    const pid=`${s.id}-${p.ticker}`.replace(/[^a-zA-Z0-9]/g,'');
+    const isCall=isLong;
+    const exp=new Date(Date.now()+18*24*60*60*1000);
+    const expStr=`${exp.getMonth()+1}/${String(exp.getDate()).padStart(2,'0')}/${exp.getFullYear()}`;
+    return`<div class="trade-row ${rowCls}">
+      <div class="tr-dir ${dirCls}">${p.direction}</div>
+      <div class="tr-body">
+        <div class="tr-ticker">${esc(p.ticker)}<span>${esc(p.name||'')}</span></div>
+        <div class="tr-rationale">${esc(p.rationale||'')}</div>
+        <div class="tr-rating"><div class="tr-dots">${dots}</div>CONVICTION: ${convLabel} · ${(p.type||'EQUITY').toUpperCase()}</div>
+      </div>
+    </div>
+    <div class="options-placeholder">
+      <span>📋</span>
+      <span>${esc(p.ticker)} · ${expStr} · ${isCall?'CALL':'PUT'} · Options data coming with Tradier integration</span>
+      <button class="log-btn" style="margin-top:0;margin-left:auto;flex-shrink:0" onclick="event.stopPropagation();openLog('${pid}','${esc(p.ticker)}','${expStr}','${isCall?'CALL':'PUT'}')">LOG TRADE</button>
+    </div>
+    <div class="log-drawer" id="log-${pid}" onclick="event.stopPropagation()">
+      <div class="log-drawer-title">Log — ${esc(p.ticker)} ${expStr} ${isCall?'CALL':'PUT'}</div>
+      <div class="log-row">
+        <div class="log-field"><div class="log-lbl">Strike</div><input class="log-input" id="li-${pid}-strike" placeholder="e.g. $77.00"></div>
+        <div class="log-field"><div class="log-lbl">Entry Premium</div><input class="log-input" id="li-${pid}-entry" placeholder="e.g. $1.95"></div>
+        <div class="log-field"><div class="log-lbl">Contracts</div><input class="log-input" id="li-${pid}-qty" placeholder="e.g. 5"></div>
+      </div>
+      <div class="log-row">
+        <div class="log-field"><div class="log-lbl">Take Profit</div><input class="log-input" id="li-${pid}-tp" placeholder="e.g. $4.00"></div>
+        <div class="log-field"><div class="log-lbl">Stop Loss</div><input class="log-input" id="li-${pid}-sl" placeholder="e.g. $0.90"></div>
+        <div class="log-field"><div class="log-lbl">Notes</div><input class="log-input" id="li-${pid}-note" placeholder="Your thesis..."></div>
+      </div>
+      <div class="log-actions">
+        <button class="log-save-btn" onclick="saveLog('${pid}','${esc(p.ticker)}','${expStr}','${isCall?'CALL':'PUT'}')">SAVE TO JOURNAL</button>
+        <span class="log-saved" id="ls-${pid}">✓ SAVED</span>
+      </div>
+    </div>`;
+  }).join('');
+
+  return`<div class="news-card ${imp}" id="nc-${s.id}" style="animation-delay:${i*0.04}s" onclick="toggleCard('${s.id}')">
+    <div class="card-collapsed">
+      <div class="card-collapsed-top">
+        <div class="card-headline-main">${esc(s.headline)}</div>
+        <div class="card-sentiment-icon ${sentCls}">${sentIcon}</div>
+      </div>
+      <div class="card-summary-text">${esc(cleanSummary.slice(0,180))}${cleanSummary.length>180?'…':''}</div>
+      <div class="card-collapsed-footer">
+        <span class="card-impact-pill ${pillCls}">${pillLbl}</span>
+        ${tickerTags}
+        <span class="card-meta-right">${esc(s.source)}${age?' · '+age:''}</span>
+      </div>
+    </div>
+    <div class="card-expanded">
+      <div class="expanded-inner">
+        <div class="expanded-section-label">Trade Plays</div>
+        ${tradeRows||'<div style="color:var(--muted);font-size:11px;font-family:var(--font-m)">No plays generated for this story.</div>'}
+        <div id="analysis-${s.id}"></div>
+      </div>
+      <div class="expanded-footer">
+        ${s.url?`<a class="story-link" href="${esc(s.url)}" target="_blank" rel="noopener" onclick="event.stopPropagation()">READ FULL STORY →</a>`:'<span></span>'}
+        <button class="deep-btn" id="btn-${s.id}" onclick="event.stopPropagation();deepAnalyze('${s.id}')">
+          <div class="mini-spin" id="spin-${s.id}" style="width:10px;height:10px;border:1px solid var(--border2);border-top-color:var(--accent);border-radius:50%;animation:spin 0.8s linear infinite;display:none"></div>
+          <span id="btnlabel-${s.id}">✦ Deep Analysis</span>
+        </button>
+      </div>
+    </div>
+  </div>`;
+}
+
+function openLog(pid,ticker,expiry,type){
+  const drawer=document.getElementById('log-'+pid);
+  if(!drawer)return;
+  // Close all other drawers
+  document.querySelectorAll('.log-drawer.open').forEach(d=>{if(d.id!=='log-'+pid)d.classList.remove('open');});
+  drawer.classList.toggle('open');
+}
+
+
+function togLog(id){document.getElementById('log-'+id)?.classList.toggle('open');}
+
+function saveLog(pid,ticker,expiry,type){
+  const g=f=>document.getElementById('li-'+pid+'-'+f)?.value||'';
+  const t={ticker,expiry,type,strike:g('strike'),entry:g('entry'),qty:g('qty'),tp:g('tp'),sl:g('sl'),note:g('note'),logged_at:new Date().toISOString()};
+  const arr=JSON.parse(localStorage.getItem('narratrade-trades')||'[]');
+  arr.unshift(t);localStorage.setItem('narratrade-trades',JSON.stringify(arr));
+  ['strike','entry','qty','tp','sl','note'].forEach(f=>{const el=document.getElementById('li-'+pid+'-'+f);if(el?.value)el.classList.add('saved');});
+  const sv=document.getElementById('ls-'+pid);if(sv){sv.style.display='inline';setTimeout(()=>sv.style.display='none',2500);}
+  updateKPIs();
+}
+
+async function deepAnalyze(id){
+  const s=stories.find(x=>String(x.id)===String(id));if(!s)return;
+  const btn=document.getElementById('btn-'+id),spin=document.getElementById('spin-'+id),lbl=document.getElementById('btnlabel-'+id);
+  btn.disabled=true;spin.style.display='block';lbl.textContent='Analyzing...';
+  try{
+    const res=await fetch('/api/analyze',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({headline:s.headline,summary:s.summary,impact:s.impact,category:s.category,plays:s.plays})});
+    const data=await res.json();if(data.error)throw new Error(data.error);
+    document.getElementById('analysis-'+id).innerHTML=`<div class="ai-analysis-box" style="margin-top:12px"><strong style="font-family:var(--font-m);font-size:8px;letter-spacing:1.5px;display:block;margin-bottom:8px;color:var(--accent)">✦ DEEP ANALYSIS</strong>${esc(data.analysis)}</div>`;
+  }catch(e){document.getElementById('analysis-'+id).innerHTML=`<div class="ai-analysis-box" style="margin-top:12px;color:var(--red)">Analysis failed: ${esc(e.message)}</div>`;}
+  spin.style.display='none';lbl.textContent='✓ Analyzed';btn.disabled=false;
+}
+
+function renderTopPlays(){
+  const all=[];stories.forEach(s=>(s.plays||[]).forEach(p=>{if(p.conviction>=2)all.push({...p});}));all.sort((a,b)=>b.conviction-a.conviction);
+  return; // topPlays merged into signalItems via renderSignalPage
+  const el=document.getElementById('topPlays');if(!el)return;
+  el.innerHTML=all.slice(0,8).map((p,i)=>{
+    const bg=p.direction==='LONG'?'var(--long-bg)':p.direction==='SHORT'?'var(--short-bg)':'var(--comm-bg)';
+    const c=p.direction==='LONG'?'var(--long-c)':p.direction==='SHORT'?'var(--short-c)':'var(--comm-c)';
+    const b=p.direction==='LONG'?'var(--long-b)':p.direction==='SHORT'?'var(--short-b)':'var(--comm-b)';
+    return`<div class="traded-item"><div class="traded-rank">${i+1}</div><div class="traded-ticker">${esc(p.ticker)}</div><div class="traded-name">${esc(p.name||'')}</div><div class="traded-dir" style="background:${bg};color:${c};border:1px solid ${b}">${p.direction}</div></div>`;
+  }).join('')||'<div style="color:var(--muted);font-size:10px">No high-conviction plays yet</div>';
+}
+
+async function loadSidebar(){loadFG();loadMkt();loadSectors();}
+
+// ── OVERVIEW PANELS (Market Pulse + Sector in Overview tab) ──
+
+async function loadFG(){
+  try{
+    const r=await fetch('https://production.dataviz.cnn.io/index/fearandgreed/graphdata');
+    const d=await r.json();
+    const score=Math.round(d?.fear_and_greed?.score??50),rating=d?.fear_and_greed?.rating??'Neutral';
+    const vEl=document.getElementById('fgVal'),lEl=document.getElementById('fgLbl');
+    if(vEl)vEl.textContent=score;
+    if(lEl){lEl.textContent=rating.toUpperCase();lEl.style.color=score<30?'var(--red)':score>70?'var(--accent)':'var(--neut-text)';}
+    document.getElementById('kpiSentiment').textContent=score+' · '+rating;
+    const gf=document.getElementById('gfill'),gn=document.getElementById('gneedle'),gd=document.getElementById('gdot');
+    if(gf)gf.setAttribute('stroke-dashoffset',157-(score/100)*157);
+    if(gn&&gd){
+      const angle=200+(score/100)*140,rad=(angle*Math.PI)/180;
+      gn.setAttribute('x2',65+42*Math.cos(rad));gn.setAttribute('y2',65+42*Math.sin(rad));
+      const nc=score<30?'#ff4d6d':score>70?'#00e5a0':'#f5c842';
+      gn.setAttribute('stroke',nc);gd.setAttribute('fill',nc);
+    }
+  }catch{const v=document.getElementById('fgVal');if(v)v.textContent='—';}
+}
+
+async function loadMkt(){
+  const idx=[{sym:'SPY',label:'S&P 500'},{sym:'QQQ',label:'Nasdaq 100'},{sym:'IWM',label:'Russell 2K'},{sym:'GLD',label:'Gold'},{sym:'TLT',label:'20Y Treasury'},{sym:'USO',label:'Crude Oil'},{sym:'UUP',label:'US Dollar'},{sym:'BTC-USD',label:'Bitcoin'}];
+  const mp=document.getElementById('mktPulse');if(!mp)return;
+  mp.innerHTML=idx.map(i=>`<div class="pulse-row"><div class="pulse-name">${i.label}</div><div style="text-align:right"><div class="pulse-price" id="pv-${i.sym}">—</div><div class="pulse-chg" id="pc-${i.sym}">—</div></div></div>`).join('');
+  // Watchlist too
+  const wl=['NVDA','TSLA','SPY','AAPL','BTC-USD'];
+  for(const sym of [...new Set([...idx.map(i=>i.sym),...wl])]){
+    try{
+      const r=await fetch(`https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(sym)}?interval=1m&range=1d`);
+      const meta=(await r.json())?.chart?.result?.[0]?.meta;if(!meta)continue;
+      const price=meta.regularMarketPrice,prev=meta.chartPreviousClose,chg=prev?(price-prev)/prev*100:0;
+      const fmt=sym==='BTC-USD'?'$'+price.toLocaleString('en-US',{maximumFractionDigits:0}):'$'+price.toFixed(2);
+      const pv=document.getElementById('pv-'+sym),pc=document.getElementById('pc-'+sym);
+      if(pv)pv.textContent=fmt;
+      if(pc){pc.textContent=(chg>=0?'+':'')+chg.toFixed(2)+'%';pc.className='pulse-chg '+(chg>=0?'up':'down');}
+
+    }catch{}
+  }
+}
+
+async function loadWatchlist(){loadMkt();}
+
+async function loadSectors(){
+  const sec=[{sym:'XLK',label:'Technology'},{sym:'XLF',label:'Financials'},{sym:'XLE',label:'Energy'},{sym:'XLV',label:'Healthcare'},{sym:'XLI',label:'Industrials'},{sym:'XLP',label:'Cons. Staples'},{sym:'XLY',label:'Cons. Disc.'},{sym:'XLRE',label:'Real Estate'}];
+  const results=[];
+  for(const s of sec){
+    try{
+      const r=await fetch(`https://query1.finance.yahoo.com/v8/finance/chart/${s.sym}?interval=1m&range=1d`);
+      const meta=(await r.json())?.chart?.result?.[0]?.meta;
+      const chg=meta?.chartPreviousClose?(meta.regularMarketPrice-meta.chartPreviousClose)/meta.chartPreviousClose*100:0;
+      results.push({label:s.label,chg});
+    }catch{results.push({label:s.label,chg:0});}
+  }
+  const mx=Math.max(...results.map(r=>Math.abs(r.chg)),0.01);
+  const sh=document.getElementById('sectorSignal') || document.getElementById('sectorHeat');
+  if(sh)sh.innerHTML=results.map(r=>{const c=r.chg>=0?'var(--bull)':'var(--bear)';return`<div class="sector-row"><div class="sector-name">${r.label}</div><div class="sector-bar-wrap"><div class="sector-bar-fill" style="width:${Math.abs(r.chg)/mx*100}%;background:${c}"></div></div><div class="sector-pct" style="color:${c}">${r.chg>=0?'+':''}${r.chg.toFixed(2)}%</div></div>`;}).join('');
+}
+
+function startCountdown(){clearInterval(refreshTimer);countdown=300;refreshTimer=setInterval(()=>{countdown--;const rf=document.getElementById('refreshFill');if(rf)rf.style.width=(countdown/300*100)+'%';if(countdown<=0)loadFeed();},1000);}
+function setPill(state,label){const el=document.getElementById('livePill');if(el)el.className='live-pill';const lbl=document.getElementById('pillLabel');if(lbl)lbl.textContent=label;}
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+</script>
+</body>
+</html>
++bal.toLocaleString('en-US',{maximumFractionDigits:0}));
+  setEl('kpiStories',stories.length||'—');
+  const canvas=document.getElementById('portfolioChart');
+  if(canvas)renderPortfolioSim(trades,bal);
+  const tb=document.getElementById('tradeBreakdown');
+  if(tb)renderTradeBreakdown(trades);
 }
 
 function renderPortfolioSim(trades, startingBalance){
