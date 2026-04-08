@@ -649,17 +649,37 @@ let stories=[],filter='all',personas=[],refreshTimer,countdown=300,user=null;
   document.getElementById('dateStr').textContent=new Date().toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric'});
 
   const{data:p}=await sb.from('profiles').select('personas').eq('id',user.id).single();
-  if(p?.personas?.length){personas=p.personas;localStorage.setItem('narratrade-personas',JSON.stringify(personas));}
-  else{const s=localStorage.getItem('narratrade-personas');personas=s?JSON.parse(s):[];if(!personas.length){window.location.href='onboarding.html';return;}}
+  if(p?.personas?.length){
+    personas=p.personas;
+    localStorage.setItem('narratrade-personas',JSON.stringify(personas));
+  }else{
+    const s=localStorage.getItem('narratrade-personas');
+    personas=s?JSON.parse(s):[];
+    if(!personas.length){window.location.href='onboarding.html';return;}
+  }
+  // Always keep localStorage in sync
+  if(personas.length)localStorage.setItem('narratrade-personas',JSON.stringify(personas));
 
   renderPersonaPills();
   loadBrokerageBalance();
   loadWatchlist();
-  loadFeed();
+  if(!window._feedLoaded){ window._feedLoaded=true; loadFeed(); }
   setInterval(loadSidebar,120000);
   updateKPIs();
 
 })();
+
+// ── AUTH STATE CHANGE (catches late session resolution) ──
+sb.auth.onAuthStateChange(async(event,session)=>{
+  if((event==='SIGNED_IN'||event==='INITIAL_SESSION')&&session&&!window._feedLoaded){
+    window._feedLoaded=true;
+    const{data:p}=await sb.from('profiles').select('personas').eq('id',session.user.id).single();
+    if(p?.personas?.length){personas=p.personas;localStorage.setItem('narratrade-personas',JSON.stringify(personas));}
+    else{const s=localStorage.getItem('narratrade-personas');personas=s?JSON.parse(s):[];}
+    if(personas.length){renderPersonaPills();setTimeout(loadFeed,150);}
+    else window.location.href='onboarding.html';
+  }
+});
 
 // ── CLOCK ──────────────────────────────
 setInterval(()=>{
@@ -688,7 +708,7 @@ function filterSig(el){document.querySelectorAll('.sig-filter').forEach(f=>f.cla
 function renderPersonaPills(){
   const html=personas.map(p=>{const m=PM[p];if(!m)return'';return`<div class="active-persona-pill ${m.cls}"><div class="persona-pill-dot"></div>${m.icon} ${m.name}</div>`;}).join('');
   document.getElementById('personaPills').innerHTML=html;
-  document.getElementById('personaPillsFeed').innerHTML=html;
+  const pf=document.getElementById('personaPillsFeed');if(pf)pf.innerHTML=html;
   renderNotice();
 }
 function renderNotice(){
