@@ -1131,11 +1131,7 @@ async function loadSectors(){
 
 function startCountdown(){clearInterval(refreshTimer);countdown=300;refreshTimer=setInterval(()=>{countdown--;const rf=document.getElementById('refreshFill');if(rf)rf.style.width=(countdown/300*100)+'%';if(countdown<=0)loadFeed();},1000);}
 function setPill(state,label){const el=document.getElementById('livePill');if(el)el.className='live-pill';const lbl=document.getElementById('pillLabel');if(lbl)lbl.textContent=label;}
-function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
-</script>
-</body>
-</html>
-+bal.toLocaleString('en-US',{maximumFractionDigits:0}));
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}+bal.toLocaleString('en-US',{maximumFractionDigits:0}));
   setEl('kpiStories',stories.length||'—');
   const canvas=document.getElementById('portfolioChart');
   if(canvas)renderPortfolioSim(trades,bal);
