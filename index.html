@@ -874,7 +874,7 @@ async function loadFeed(){
 
     // Step 2: fetch AI briefs with 28s timeout (Vercel limit is 30s)
     fc(`<div class="feed-loading"><div class="big-spin"></div><p>ANALYZING ${raw.length} STORIES...</p><small>Claude is generating trade plays</small></div>`);
-    document.getElementById('signalFeed').innerHTML=`<div class="feed-loading"><div class="big-spin"></div><p>ANALYZING SIGNALS...</p></div>`;
+    // signalFeed removed — signals now live in sidebar
 
     let briefs=[];
     try{
@@ -918,7 +918,7 @@ async function loadFeed(){
     console.error('loadFeed error:',err);
     const msg=err.message||'Unknown error';
     fc(`<div class="feed-loading" style="color:var(--red)"><p>FEED ERROR</p><small style="color:var(--muted);max-width:400px;text-align:center;line-height:1.6">${esc(msg)}</small><button onclick="loadFeed()" style="margin-top:16px;font-family:var(--font-m);font-size:10px;background:none;border:1px solid var(--red);color:var(--red);padding:8px 20px;cursor:pointer;border-radius:20px">↺ RETRY</button></div>`);
-    document.getElementById('signalFeed').innerHTML=`<div style="color:var(--muted);font-size:12px;padding:20px;font-family:var(--font-m)">Signals unavailable. <a href="#" onclick="loadFeed();return false" style="color:var(--accent)">↺ Retry</a></div>`;
+    // signalFeed removed
     setPill('error','↺ RETRY');
   }
 }
@@ -947,7 +947,7 @@ function renderSignalPage(){
   const bull=stories.filter(s=>s.impact==='bullish').slice(0,3);
   const bear=stories.filter(s=>s.impact==='bearish').slice(0,2);
   const top=[...bull,...bear];
-  document.getElementById('signalFeed').innerHTML=top.map(s=>{
+  const sfEl=document.getElementById('signalFeed'); if(sfEl) sfEl.innerHTML=top.map(s=>{
     const cls={bullish:'bull',bearish:'bear',mixed:'neu'}[s.impact]||'neu';
     const icon={bullish:'↑',bearish:'↓',mixed:'–'}[s.impact]||'–';
     const cleanSummary=stripHtml(s.summary||'');
