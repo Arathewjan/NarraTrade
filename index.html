@@ -532,6 +532,7 @@ let stories=[],filter='all',personas=[],refreshTimer,countdown=300,user=null;
 
 // ── AUTH GUARD ─────────────────────────
 (async()=>{
+  try{
   const{data:{session}}=await sb.auth.getSession();
   if(!session?.user){window.location.href='onboarding.html';return;}
   user=session.user;
@@ -559,8 +560,12 @@ let stories=[],filter='all',personas=[],refreshTimer,countdown=300,user=null;
   showPage('feed');
   if(!window._feedLoaded){ window._feedLoaded=true; loadFeed(); }
   setInterval(loadSidebar,120000);
-  updateKPIs();
-
+  try{updateKPIs();}catch(e){console.warn('KPI update skipped:',e.message);}
+  }catch(fatalErr){
+    console.error('Auth IIFE error:',fatalErr);
+    // Still try to load the feed even if something else crashed
+    if(!window._feedLoaded){window._feedLoaded=true;loadFeed();}
+  }
 })();
 
 // ── DOM READY FALLBACK ──
