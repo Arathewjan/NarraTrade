@@ -451,6 +451,16 @@ function renderFeed(){
 function toggleCard(id){var el=document.getElementById('nc-'+id);if(el)el.classList.toggle('expanded');}
 
 // ── OPTIONS FETCH & RENDER ────────────────────────────────────────────────────
+// wrapper called from data-attr onclick — reads data attributes, no inline escaping needed
+function handleOptionsTrigger(event, el){
+  var pid=el.dataset.pid;
+  var ticker=el.dataset.ticker;
+  var optionDirection=el.dataset.dir;
+  var targetExpiry=el.dataset.expiry;
+  var conviction=parseInt(el.dataset.conviction)||5;
+  toggleOptions(event,pid,ticker,optionDirection,targetExpiry,conviction);
+}
+
 async function toggleOptions(event, pid, ticker, optionDirection, targetExpiry, conviction){
   event.stopPropagation();
   var trigger=document.getElementById('opt-trigger-'+pid);
@@ -518,7 +528,7 @@ async function toggleOptions(event, pid, ticker, optionDirection, targetExpiry, 
           +'<div class="opt-meta-item"><div class="opt-meta-dot"></div>'+esc(oiStr)+'</div>'
           +'<div class="opt-meta-item"><div class="opt-meta-dot"></div>Exp '+esc(data.expiry)+'</div>'
         +'</div>'
-        +'<button class="opt-log-btn" onclick="event.stopPropagation();openLog(\''+pid+'\',\''+esc(ticker)+'\',\''+esc(data.expiry)+'\',\''+data.optionType.toUpperCase()+'\','+data.entry+','+data.tp1+','+data.tp2+','+data.sl+')">LOG THIS TRADE</button>'
+        +'<button class="opt-log-btn" data-pid="'+pid+'" data-ticker="'+esc(ticker)+'" data-expiry="'+esc(data.expiry)+'" data-type="'+data.optionType.toUpperCase()+'" data-entry="'+data.entry+'" data-tp1="'+data.tp1+'" data-tp2="'+data.tp2+'" data-sl="'+data.sl+'" onclick="event.stopPropagation();handleLogBtn(this)">LOG THIS TRADE</button>'
       +'</div>';
     dropdown.dataset.loaded='1';
   }catch(e){
@@ -557,8 +567,8 @@ function card(s,i){
         +'<div class="tr-rating"><div class="tr-dots">'+dots+'</div>CONVICTION '+conviction+'/10</div>'
       +'</div>'
       +'</div>'
-      // options trigger button
-      +'<div class="options-trigger" id="opt-trigger-'+pid+'" onclick="toggleOptions(event,\''+pid+'\',\''+esc(p.ticker)+'\',\''+optDir+'\',\''+targetExpiry+'\','+conviction+')">'
+      // options trigger — data attrs avoid inline quote escaping bugs
+      +'<div class="options-trigger" id="opt-trigger-'+pid+'" data-pid="'+pid+'" data-ticker="'+p.ticker+'" data-dir="'+optDir+'" data-expiry="'+targetExpiry+'" data-conviction="'+conviction+'" onclick="handleOptionsTrigger(event,this)">'
         +'<span class="options-trigger-label">⬡ OPTIONS</span>'
         +'<span class="options-trigger-ticker">'+esc(p.ticker)+'</span>'
         +'<span class="options-trigger-status">'+optDir.toUpperCase()+' · '+targetExpiry+'</span>'
@@ -607,6 +617,18 @@ function card(s,i){
 }
 
 // pre-fill log drawer with live options data
+function handleLogBtn(el){
+  var pid=el.dataset.pid;
+  var ticker=el.dataset.ticker;
+  var expiry=el.dataset.expiry;
+  var type=el.dataset.type;
+  var entry=parseFloat(el.dataset.entry)||0;
+  var tp1=parseFloat(el.dataset.tp1)||0;
+  var tp2=parseFloat(el.dataset.tp2)||0;
+  var sl=parseFloat(el.dataset.sl)||0;
+  openLog(pid,ticker,expiry,type,entry,tp1,tp2,sl);
+}
+
 function openLog(pid,ticker,expiry,type,entry,tp1,tp2,sl){
   document.querySelectorAll('.log-drawer.open').forEach(function(d){if(d.id!=='log-'+pid)d.classList.remove('open');});
   var d=document.getElementById('log-'+pid);if(!d)return;
