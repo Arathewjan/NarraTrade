@@ -435,6 +435,7 @@ async function loadFeed(){
 
 function renderFeed(){
   var list=filter==='all'?stories:(filter==='bearish'||filter==='bullish'||filter==='mixed')?stories.filter(function(s){return s.impact===filter;}):stories.filter(function(s){return s.category===filter||s._cat===filter;});
+  list=list.filter(function(s){return s.impact!=='mixed';});
   var vis=list.filter(function(s){return matches(s);});
   var hid=list.filter(function(s){return !matches(s);});
   var sc=document.getElementById('storyCount');if(sc)sc.textContent=vis.length+' stories';
@@ -546,7 +547,7 @@ function card(s,i){
   var tradeRows=(s.plays||[]).map(function(p){
     var rc=p.direction==='LONG'?'long-r':p.direction==='SHORT'?'short-r':'comm-r';
     var dc=p.direction==='LONG'?'long':p.direction==='SHORT'?'short':'comm';
-    var pid=String(s.id+'-'+p.ticker).replace(/[^a-zA-Z0-9]/g,'');
+    var pid='p'+String(s.id).replace(/[^a-zA-Z0-9]/g,'')+String(p.ticker).replace(/[^a-zA-Z0-9]/g,'');
     var conviction=p.conviction||5;
     var optDir=p.optionDirection||(p.direction==='SHORT'?'put':'call');
     var targetExpiry=p.targetExpiry||new Date(Date.now()+14*24*60*60*1000).toISOString().split('T')[0];
@@ -594,7 +595,7 @@ function card(s,i){
 
   return '<div class="news-card '+imp+'" id="nc-'+s.id+'" onclick="toggleCard('+JSON.stringify(String(s.id))+')">'
     +'<div class="card-collapsed">'
-      +'<div class="card-collapsed-top"><div class="card-headline-main">'+esc(s.headline)+'</div><div class="card-sentiment-icon '+sc+'">'+si+'</div></div>'
+      +'<div class="card-collapsed-top"><div class="card-headline-main">'+esc(s.headline)+'</div></div>'
       +'<div class="card-summary-text">'+esc(clean)+'</div>'
       +'<div class="card-collapsed-footer"><span class="card-impact-pill '+pc+'">'+pl+'</span>'+tickers+'<span class="card-meta-right">'+esc(s.source)+(age?' - '+age:'')+'</span></div>'
     +'</div>'
