@@ -593,7 +593,7 @@ function card(s,i){
       +'</div>';
   }).join('');
 
-  return '<div class="news-card '+imp+'" id="nc-'+s.id+'" onclick="toggleCard('+JSON.stringify(String(s.id))+')">'
+  return '<div class="news-card '+imp+'" id="nc-'+s.id+'" onclick="toggleCard(\''+s.id+'\')">'
     +'<div class="card-collapsed">'
       +'<div class="card-collapsed-top"><div class="card-headline-main">'+esc(s.headline)+'</div></div>'
       +'<div class="card-summary-text">'+esc(clean)+'</div>'
