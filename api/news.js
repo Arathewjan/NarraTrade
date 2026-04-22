@@ -12,11 +12,15 @@ module.exports = async (req, res) => {
           .catch(() => [])
       )
     );
+    const M_A_RE = /acqui(re|sition|red)|merger|takeover/i;
+    const FOREIGN_WORDS = /\b(le|la|les|un|une|des|du|est|et|en|pour|sur|avec|dans|par|que|qui|el|los|las|una|del|por|es|se|der|die|das|und|ist|ein|eine|zu|mit|auf|von|für|oder)\b/i;
     const seen = new Set();
     const items = [];
     results.forEach((arr, ci) => {
       (Array.isArray(arr) ? arr : []).slice(0, 8).forEach(a => {
         if (!a.headline || seen.has(a.id)) return;
+        if (catMap[cats[ci]] === 'merger' || M_A_RE.test(a.headline)) return;
+        if (FOREIGN_WORDS.test(a.headline) || /[^\x00-\x7F]/.test(a.headline)) return;
         seen.add(a.id);
         items.push({
           id: a.id,

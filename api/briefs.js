@@ -54,6 +54,7 @@ Rules:
 - oneLiner must be market-impact focused
 - impact must be ONLY "bullish" or "bearish"
 - Never use tickers without listed options (avoid OTC, penny stocks)
+- If category is "merger", return an empty plays array []
 
 NEWS TO ANALYZE:
 ${JSON.stringify(input)}
