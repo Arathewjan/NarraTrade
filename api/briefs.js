@@ -55,6 +55,7 @@ Rules:
 - impact must be ONLY "bullish" or "bearish"
 - Never use tickers without listed options (avoid OTC, penny stocks)
 - If category is "merger", return an empty plays array []
+- STRICT RELEVANCE FILTER: Only generate plays if the story directly names a company, directly impacts a specific sector with clear price catalyst, or is a major macro event. If you are inferring a connection more than 1 degree removed from the story — for example, blaming a chip maker for someone else's software problem — return plays: []. When in doubt, return plays: [].
 
 NEWS TO ANALYZE:
 ${JSON.stringify(input)}
