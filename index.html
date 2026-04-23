@@ -370,6 +370,7 @@ const sb=supabase.createClient(SB_URL,SB_KEY);
 const PC={day:['geopolitical','macro','general','forex'],swing:['earnings','crypto','merger','commodities'],macro:['geopolitical','macro','general','forex'],investor:['earnings','general','merger']};
 const PM={day:{name:'Day Trader',cls:'day'},swing:{name:'Swing Trader',cls:'swing'},macro:{name:'Macro Trader',cls:'macro'},investor:{name:'Investor',cls:'investor'}};
 let stories=[],filter='all',personas=[],user=null;
+const seenStoryIds=new Set();
 
 // clock
 setInterval(function(){var el=document.getElementById('clock');if(el)el.textContent=new Date().toLocaleTimeString('en-US',{hour12:false});},1000);
@@ -407,6 +408,9 @@ async function loadFeed(){
     if(!nr.ok)throw new Error('News API '+nr.status);
     raw=await nr.json();
     if(!raw||!raw.length)throw new Error('No stories returned');
+    raw=raw.filter(function(item){return!seenStoryIds.has(item.id);});
+    raw.forEach(function(item){seenStoryIds.add(item.id);});
+    if(!raw.length){setPill('REFRESH');setTimeout(loadFeed,900000);return;}
   }catch(e){
     fc('<div class="feed-loading" style="color:var(--red)"><p>FEED ERROR: '+esc(e.message)+'</p><button onclick="loadFeed()" style="margin-top:16px;font-family:var(--font-m);font-size:10px;background:none;border:1px solid var(--red);color:var(--red);padding:8px 20px;cursor:pointer;border-radius:20px">RETRY</button></div>');
     setPill('RETRY');return;
@@ -429,7 +433,7 @@ async function loadFeed(){
   }catch(e){console.warn('Briefs:',e.message);}
   var lf=document.getElementById('lastFetch');if(lf)lf.textContent='Updated '+new Date().toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'});
   var sc=document.getElementById('storyCount');if(sc)sc.textContent=stories.length+' stories';
-  setPill('REFRESH');loadSidebar();setTimeout(loadFeed,300000);
+  setPill('REFRESH');loadSidebar();setTimeout(loadFeed,900000);
 }
 
 function renderFeed(){
