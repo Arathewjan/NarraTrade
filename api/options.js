@@ -78,22 +78,34 @@ module.exports = async (req, res) => {
 
     if (!filtered.length) throw new Error(`No liquid ${optionType} contracts found for ${ticker}`);
 
-    // Find nearest ATM or first OTM strike
-    // For calls: first strike >= stock price (ATM or OTM)
-    // For puts: first strike <= stock price (ATM or OTM)
+    // Select best OTM contract in preferred strike range, sorted by open interest
     let bestContract;
     if (optionType === 'call') {
-      const otmCalls = filtered
-        .filter(o => o.strike >= stockPrice)
-        .sort((a, b) => a.strike - b.strike);
-      bestContract = otmCalls[0] || filtered.sort((a, b) =>
-        Math.abs(a.strike - stockPrice) - Math.abs(b.strike - stockPrice))[0];
+      const inRange = filtered
+        .filter(o => o.strike >= stockPrice * 1.05 && o.strike <= stockPrice * 1.15)
+        .sort((a, b) => (b.open_interest || 0) - (a.open_interest || 0));
+      if (inRange.length) {
+        bestContract = inRange[0];
+      } else {
+        // Fall back to nearest strike above the 5% threshold (stays OTM)
+        const fallback = filtered
+          .filter(o => o.strike >= stockPrice * 1.05)
+          .sort((a, b) => a.strike - b.strike);
+        bestContract = fallback[0] || filtered.sort((a, b) => a.strike - b.strike).reverse()[0];
+      }
     } else {
-      const otmPuts = filtered
-        .filter(o => o.strike <= stockPrice)
-        .sort((a, b) => b.strike - a.strike);
-      bestContract = otmPuts[0] || filtered.sort((a, b) =>
-        Math.abs(a.strike - stockPrice) - Math.abs(b.strike - stockPrice))[0];
+      const inRange = filtered
+        .filter(o => o.strike >= stockPrice * 0.85 && o.strike <= stockPrice * 0.95)
+        .sort((a, b) => (b.open_interest || 0) - (a.open_interest || 0));
+      if (inRange.length) {
+        bestContract = inRange[0];
+      } else {
+        // Fall back to nearest strike below the 5% threshold (stays OTM)
+        const fallback = filtered
+          .filter(o => o.strike <= stockPrice * 0.95)
+          .sort((a, b) => b.strike - a.strike);
+        bestContract = fallback[0] || filtered.sort((a, b) => b.strike - a.strike).reverse()[0];
+      }
     }
 
     if (!bestContract) throw new Error(`Could not select best contract for ${ticker}`);
