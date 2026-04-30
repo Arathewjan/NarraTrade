@@ -438,6 +438,8 @@ async function loadFeed(){
 
 function renderFeed(){
   var list=filter==='all'?stories:(filter==='bearish'||filter==='bullish'||filter==='mixed')?stories.filter(function(s){return s.impact===filter;}):stories.filter(function(s){return s.category===filter||s._cat===filter;});
+  var briefsDone=stories.some(function(s){return s.plays&&s.plays.length>0;});
+  if(briefsDone){list=list.filter(function(s){return s.impact!=='mixed';});list=list.filter(function(s){return s.plays&&s.plays.length>0;});}
   var vis=list.filter(function(s){return matches(s);});
   var hid=list.filter(function(s){return !matches(s);});
   var sc=document.getElementById('storyCount');if(sc)sc.textContent=vis.length+' stories';
